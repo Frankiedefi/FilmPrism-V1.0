@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Screenplay formatting styles */
+.screenplay {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12pt;
+  line-height: 1;
+}
+
+.screenplay .scene-heading {
+  text-transform: uppercase;
+  margin-top: 2em;
+  color: #3b82f6; /* Blue */
+}
+
+.screenplay .action {
+  margin-top: 1em;
+}
+
+.screenplay .character {
+  margin-top: 1em;
+  margin-left: 2.5in;
+  color: #10b981; /* Green */
+}
+
+.screenplay .dialogue {
+  margin-left: 1in;
+  margin-right: 1.5in;
+}
+
+.screenplay .parenthetical {
+  margin-left: 1.8in;
+  margin-right: 1.8in;
+  color: #6b7280; /* Gray */
+}
+
+.screenplay .transition {
+  text-transform: uppercase;
+  margin-top: 1em;
+  text-align: right;
+  color: #ef4444; /* Red */
+}
+
+/* Syntax highlighting */
+.script-editor .scene-heading {
+  color: #3b82f6; /* Blue */
+}
+
+.script-editor .character {
+  color: #10b981; /* Green */
+}
+
+.script-editor .parenthetical {
+  color: #6b7280; /* Gray */
+}
+
+.script-editor .transition {
+  color: #ef4444; /* Red */
+}

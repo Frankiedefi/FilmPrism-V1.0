@@ -1,43 +1,50 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FileText, Film } from 'lucide-react';
-
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  productionType: string;
-  scriptTitle: string;
-}
+import React, { useState } from 'react';
 
 interface ProjectCardProps {
-  project: Project;
+  project: {
+    id: number;
+    title: string;
+    script: string;
+    context: {
+      characters: string[];
+      scenes: string[];
+      plotPoints: string[];
+    };
+  };
 }
 
-function ProjectCard({ project }: ProjectCardProps) {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleExpand = () => setIsExpanded(!isExpanded);
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 flex flex-col">
-      <div className="flex items-center mb-4">
-        <Film className="h-8 w-8 text-indigo-600 mr-3" />
-        <h3 className="text-xl font-semibold">{project.title}</h3>
-      </div>
-      <p className="text-gray-600 mb-4">{project.description}</p>
-      <div className="flex items-center text-sm text-gray-500 mb-2">
-        <span className="font-medium mr-2">Type:</span>
-        {project.productionType}
-      </div>
-      <div className="flex items-center text-sm text-gray-500">
-        <FileText className="h-4 w-4 mr-2" />
-        {project.scriptTitle}
-      </div>
-      <Link
-        to={`/dashboard/projects/${project.id}`}
-        className="mt-4 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition duration-300 text-center"
+    <div className="bg-white shadow-md rounded-lg p-4 mb-4">
+      <h3 className="text-xl font-bold mb-2">{project.title}</h3>
+      <p className="text-gray-600 mb-2">Characters: {project.context.characters.join(', ')}</p>
+      <p className="text-gray-600 mb-2">Plot Points: {project.context.plotPoints.join(', ')}</p>
+      <button
+        onClick={toggleExpand}
+        className="text-blue-500 hover:text-blue-700"
       >
-        View Project
-      </Link>
+        {isExpanded ? 'Hide Details' : 'Show Details'}
+      </button>
+      {isExpanded && (
+        <div className="mt-4">
+          <h4 className="font-semibold mb-2">Script:</h4>
+          <pre className="bg-gray-100 p-2 rounded whitespace-pre-wrap">
+            {project.script}
+          </pre>
+          <h4 className="font-semibold mt-4 mb-2">Scenes:</h4>
+          <ul className="list-disc list-inside">
+            {project.context.scenes.map((scene, index) => (
+              <li key={index}>{scene}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default ProjectCard;

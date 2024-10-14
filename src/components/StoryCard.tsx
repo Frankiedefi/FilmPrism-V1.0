@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, RefreshCw, Film, Tv, Mic, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { ChevronRight, ChevronLeft, RefreshCw, Film, Tv, Mic, ChevronDown, ChevronUp, Clock, Upload, Music, Video } from 'lucide-react';
 import { generateDialogue } from '../services/llm';
 
 interface StoryCardProps {
@@ -9,22 +9,41 @@ interface StoryCardProps {
 }
 
 interface StoryContext {
+  option: string;
   scriptType: string;
   genres: string[];
   timePeriod: string;
   logline: string;
   title: string;
+  characters: string[];
+  setting: string;
+  conflict: string;
+  theme: string;
+  uploadedScene?: File | null;
+  commercialProduct?: string;
+  musicLyrics?: string;
 }
 
 const initialAnswers: StoryContext = {
+  option: '',
   scriptType: '',
   genres: [],
   timePeriod: '',
   logline: '',
   title: '',
+  characters: [],
+  setting: '',
+  conflict: '',
+  theme: '',
 };
 
-const scriptTypes = ['Film', 'TV', 'Podcast'];
+const options = [
+  { id: 'createScene', label: 'Create a Scene', icon: Film },
+  { id: 'uploadScene', label: 'Upload a Scene', icon: Upload },
+  { id: 'createCommercial', label: 'Create a Short TV Commercial', icon: Tv },
+  { id: 'createMusicVideo', label: 'Create a Music Video with Lyrics', icon: Music },
+];
+
 const genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Thriller', 'Romance', 'Fantasy', 'Sci-Fi', 'Mystery', 'Adventure'];
 const timePeriods = ['Ancient History', 'Medieval', 'Renaissance', 'Industrial Revolution', 'Roaring Twenties', 'Great Depression', 'World War II', 'Cold War', 'Modern Day', 'Near Future', 'Distant Future'];
 
@@ -33,10 +52,16 @@ const StoryCard: React.FC<StoryCardProps> = ({ onComplete, onLogUpdate }) => {
   const [answers, setAnswers] = useState<StoryContext>(initialAnswers);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
-  const [generatedIdea, setGeneratedIdea] = useState<string | null>(null);
+  const [showCharacterContext, setShowCharacterContext] = useState(false);
 
   const handleNext = useCallback(() => {
-    if (currentStep < 5) {
+    const maxSteps = {
+      createScene: 8,
+      uploadScene: 1,
+      createCommercial: 2,
+      createMusicVideo: 2,
+    };
+    if (currentStep < maxSteps[answers.option as keyof typeof maxSteps]) {
       setCurrentStep(prev => prev + 1);
     } else {
       onComplete(answers);
@@ -49,36 +74,21 @@ const StoryCard: React.FC<StoryCardProps> = ({ onComplete, onLogUpdate }) => {
     }
   }, [currentStep]);
 
-  const handleScriptTypeSelect = useCallback((type: string) => {
-    setAnswers(prev => ({ ...prev, scriptType: type }));
-    onLogUpdate(`Script type selected: ${type}`);
-    handleNext();
-  }, [handleNext, onLogUpdate]);
-
-  const handleGenreSelect = useCallback((genre: string) => {
-    setAnswers(prev => {
-      const newGenres = prev.genres.includes(genre)
-        ? prev.genres.filter(g => g !== genre)
-        : [...prev.genres, genre].slice(0, 3);
-      onLogUpdate(`Genres updated: ${newGenres.join(', ')}`);
-      return { ...prev, genres: newGenres };
-    });
+  const handleOptionSelect = useCallback((option: string) => {
+    setAnswers(prev => ({ ...prev, option }));
+    onLogUpdate(`Option selected: ${option}`);
+    setCurrentStep(1); // Automatically move to the next step
   }, [onLogUpdate]);
 
-  const handleTimePeriodSelect = useCallback((period: string) => {
-    setAnswers(prev => ({ ...prev, timePeriod: period }));
-    onLogUpdate(`Time period selected: ${period}`);
-  }, [onLogUpdate]);
-
-  const handleInputChange = useCallback((key: keyof StoryContext, value: string) => {
+  const handleInputChange = useCallback((key: keyof StoryContext, value: string | string[] | File | null) => {
     setAnswers(prev => ({ ...prev, [key]: value }));
-    onLogUpdate(`${key.charAt(0).toUpperCase() + key.slice(1)} updated: ${value}`);
+    onLogUpdate(`${key.charAt(0).toUpperCase() + key.slice(1)} updated: ${value instanceof File ? value.name : value}`);
   }, [onLogUpdate]);
 
   const generateLogline = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Generate a compelling logline for a ${answers.scriptType} script in the ${answers.genres.join(', ')} genre(s), set in the ${answers.timePeriod} time period.`;
+      const prompt = `Generate a compelling logline for a ${answers.scriptType} in the ${answers.genres.join(', ')} genre(s), set in the ${answers.timePeriod} time period.`;
       const logline = await generateDialogue(prompt, [], JSON.stringify(answers));
       setAnswers(prev => ({ ...prev, logline }));
       onLogUpdate('Logline generated');
@@ -90,24 +100,48 @@ const StoryCard: React.FC<StoryCardProps> = ({ onComplete, onLogUpdate }) => {
     }
   };
 
-  const handleGenerateIdea = async () => {
+  const generateStoryElements = async () => {
     setIsGenerating(true);
     try {
-      const prompt = `Generate a detailed story idea for a ${answers.scriptType} script with the following details:
+      const prompt = `Based on the following story details:
+      Script Type: ${answers.scriptType}
       Genres: ${answers.genres.join(', ')}
       Time Period: ${answers.timePeriod}
       Logline: ${answers.logline}
-      Title: ${answers.title}`;
-      const idea = await generateDialogue(prompt, [], JSON.stringify(answers));
-      setGeneratedIdea(idea);
-      onLogUpdate('Story idea generated');
+      Title: ${answers.title}
+
+      Generate the following story elements:
+      1. Main characters (comma-separated list)
+      2. Setting description
+      3. Central conflict
+      4. Theme
+
+      Format the response as JSON with keys: characters, setting, conflict, theme`;
+
+      const response = await generateDialogue(prompt, [], JSON.stringify(answers));
+      const storyElements = JSON.parse(response);
+      
+      setAnswers(prev => ({
+        ...prev,
+        characters: storyElements.characters.split(',').map((char: string) => char.trim()),
+        setting: storyElements.setting,
+        conflict: storyElements.conflict,
+        theme: storyElements.theme
+      }));
+      
+      onLogUpdate('Story elements generated');
     } catch (error) {
-      console.error('Error generating story idea:', error);
-      setGeneratedIdea('Failed to generate a story idea. Please try again.');
+      console.error('Error generating story elements:', error);
     } finally {
       setIsGenerating(false);
     }
   };
+
+  useEffect(() => {
+    if (answers.option === 'createScene' && currentStep === 7) {
+      generateStoryElements();
+    }
+  }, [currentStep, answers.option]);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -118,164 +152,64 @@ const StoryCard: React.FC<StoryCardProps> = ({ onComplete, onLogUpdate }) => {
         </button>
       </div>
       {isExpanded && (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
-          >
-            {currentStep === 0 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Select Script Type</h4>
-                <div className="flex space-x-4">
-                  {scriptTypes.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => handleScriptTypeSelect(type)}
-                      className={`flex items-center justify-center p-4 rounded-lg ${
-                        answers.scriptType === type ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      {type === 'Film' && <Film className="h-6 w-6 mr-2" />}
-                      {type === 'TV' && <Tv className="h-6 w-6 mr-2" />}
-                      {type === 'Podcast' && <Mic className="h-6 w-6 mr-2" />}
-                      {type}
-                    </button>
-                  ))}
+        <div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.3 }}
+            >
+              {currentStep === 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold mb-2">Select an Option</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {options.map((option) => (
+                      <button
+                        key={option.id}
+                        onClick={() => handleOptionSelect(option.id)}
+                        className="flex items-center justify-center p-4 rounded-lg bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition duration-300"
+                      >
+                        <option.icon className="h-6 w-6 mr-2" />
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            {currentStep === 1 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Select Genres (up to 3)</h4>
-                <div className="flex flex-wrap gap-2">
-                  {genres.map((genre) => (
-                    <button
-                      key={genre}
-                      onClick={() => handleGenreSelect(genre)}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        answers.genres.includes(genre)
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      {genre}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {currentStep === 2 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Select Time Period</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {timePeriods.map((period) => (
-                    <button
-                      key={period}
-                      onClick={() => handleTimePeriodSelect(period)}
-                      className={`flex items-center justify-center p-2 rounded-lg ${
-                        answers.timePeriod === period ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-700'
-                      }`}
-                    >
-                      <Clock className="h-4 w-4 mr-2" />
-                      {period}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {currentStep === 3 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Generate or Enter Logline</h4>
-                <textarea
-                  value={answers.logline}
-                  onChange={(e) => handleInputChange('logline', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 mb-2"
-                  placeholder="Enter a brief logline for your story or generate one"
-                  rows={3}
-                />
-                <button
-                  onClick={generateLogline}
-                  disabled={isGenerating}
-                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300 disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2" />
-                      Generate Logline
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-            {currentStep === 4 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Enter Title</h4>
-                <input
-                  type="text"
-                  value={answers.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter your story title"
-                />
-              </div>
-            )}
-            {currentStep === 5 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Generate Story Idea</h4>
-                <button
-                  onClick={handleGenerateIdea}
-                  disabled={isGenerating}
-                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300 disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-5 w-5 mr-2" />
-                      Generate Story Idea
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-            <div className="flex justify-between mt-4">
+              )}
+              {/* Add the rest of your step renderings here */}
               {currentStep > 0 && (
-                <button
-                  onClick={handleBack}
-                  className="flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300"
-                >
-                  <ChevronLeft className="h-5 w-5 mr-2" />
-                  Back
-                </button>
+                <div className="flex justify-between mt-4">
+                  <button
+                    onClick={handleBack}
+                    className="flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition duration-300"
+                  >
+                    <ChevronLeft className="h-5 w-5 mr-2" />
+                    Back
+                  </button>
+                  {currentStep < (answers.option === 'createScene' ? 8 : answers.option === 'uploadScene' ? 1 : 2) && (
+                    <button
+                      onClick={handleNext}
+                      className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300"
+                    >
+                      Next
+                      <ChevronRight className="h-5 w-5 ml-2" />
+                    </button>
+                  )}
+                  {currentStep === (answers.option === 'createScene' ? 8 : answers.option === 'uploadScene' ? 1 : 2) && (
+                    <button
+                      onClick={() => onComplete(answers)}
+                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
+                    >
+                      Complete
+                      <ChevronRight className="h-5 w-5 ml-2" />
+                    </button>
+                  )}
+                </div>
               )}
-              {currentStep < 5 && (
-                <button
-                  onClick={handleNext}
-                  className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 ml-auto"
-                >
-                  Next
-                  <ChevronRight className="h-5 w-5 ml-2" />
-                </button>
-              )}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      )}
-      {generatedIdea && (
-        <div className="mt-4 p-4 bg-indigo-100 rounded-md">
-          <h4 className="font-semibold mb-2">Generated Story Idea:</h4>
-          <p>{generatedIdea}</p>
+            </motion.div>
+          </AnimatePresence>
         </div>
       )}
     </div>

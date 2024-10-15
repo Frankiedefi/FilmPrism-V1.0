@@ -53,6 +53,8 @@ const FilmPrismV1: React.FC = () => {
   const [newContent, setNewContent] = useState('');
   const [hoveredElementId, setHoveredElementId] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [newSceneNumber, setNewSceneNumber] = useState('');
+  const numberInputRef = useRef<HTMLInputElement>(null);
 
 
   useEffect(() => {
@@ -129,7 +131,7 @@ const FilmPrismV1: React.FC = () => {
     setScriptContent(prevContent => 
       prevContent.map(item => 
         item.id === id
-          ? { ...item, content: `${id}  ${updates.heading}` }
+          ? { ...item, content: `${updates.number || item.content.split('  ')[0]}  ${updates.heading || item.content.split('  ')[1]}` }
           : item
       )
     );
@@ -175,26 +177,50 @@ const FilmPrismV1: React.FC = () => {
   const handleEditClick = (id: number) => {
     const element = scriptContent.find(item => item.id === id);
     setEditingElementId(id);
-    setNewContent(element?.content || ''); 
+    if (element && element.type === 'scene') {
+      const parts = element.content.split('  ');
+      setNewContent(parts[1]);
+      setNewSceneNumber(parts[0]);
+    } else {
+      setNewContent(element?.content || '');
+    }
     if (inputRef.current) {
       inputRef.current.focus();
+    }
+    if (numberInputRef.current) {
+      numberInputRef.current.focus();
     }
   };
 
   const handleInputChange = (id: number, value: string) => {
     setNewContent(value);
-    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: value } : item));
+    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: `${newSceneNumber}  ${value}` } : item));
+    const sceneIndex = scenes.findIndex(scene => scene.id === id);
+    if (sceneIndex !== -1) {
+      setScenes(scenes.map(scene => scene.id === id ? { ...scene, heading: value } : scene));
+    }
+  };
+
+  const handleInputNumberChange = (id: number, value: string) => {
+    setNewSceneNumber(value);
+    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: `${value}  ${newContent}` } : item));
+    const sceneIndex = scenes.findIndex(scene => scene.id === id);
+    if (sceneIndex !== -1) {
+      setScenes(scenes.map(scene => scene.id === id ? { ...scene, number: parseInt(value, 10) } : scene));
+    }
   };
 
   const handleSaveEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
+    setNewSceneNumber('');
     setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
   };
 
   const handleCancelEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
+    setNewSceneNumber('');
     const originalContent = scriptContent.find(item => item.id === id)?.content;
     setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: originalContent || '' } : item));
     setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
@@ -278,7 +304,7 @@ const FilmPrismV1: React.FC = () => {
               ))}
             </div>
             <div
-              className={`flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${ // Added mt-2 for 0.5rem top margin
+              className={`flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
               } overflow-y-auto whitespace-pre-wrap`}
               style={{
@@ -301,14 +327,37 @@ const FilmPrismV1: React.FC = () => {
                 >
                   {editingElementId === item.id ? (
                     <div className="flex items-center">
-                      <input
-                        type="text"
-                        ref={inputRef}
-                        value={newContent}
-                        onChange={(e) => handleInputChange(item.id, e.target.value)}
-                        className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`} 
-                        style={{ opacity: 0.8 }}
-                      />
+                      {item.type === 'scene' ? (
+                        <>
+                          <input
+                            type="text"
+                            ref={numberInputRef}
+                            value={newSceneNumber}
+                            onChange={(e) => handleInputNumberChange(item.id, e.target.value)}
+                            className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mr-2 mt-2`}
+                            style={{ opacity: 0.8, width: '3rem' }}
+                          />
+                          <input
+                            type="text"
+                            ref={inputRef}
+                            value={newContent}
+                            onChange={(e) => handleInputChange(item.id, e.target.value)}
+                            className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
+                            style={{ opacity: 0.8 }}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            ref={inputRef}
+                            value={newContent}
+                            onChange={(e) => handleInputChange(item.id, e.target.value)}
+                            className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
+                            style={{ opacity: 0.8 }}
+                          />
+                        </>
+                      )}
                       <Check onClick={() => handleSaveEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
                       <X onClick={() => handleCancelEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
                     </div>

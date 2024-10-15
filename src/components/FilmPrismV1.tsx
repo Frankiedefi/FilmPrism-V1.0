@@ -41,7 +41,7 @@ const ScriptPal: React.FC = () => {
 const FilmPrismV1: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [scriptContent, setScriptContent] = useState<Array<{ type: string; content: string }>>([]);
+  const [scriptContent, setScriptContent] = useState<Array<{ id: number; type: string; content: string; editing: boolean }>>([]);
   const [pageCount, setPageCount] = useState(1);
   const [runTime, setRunTime] = useState('0:00');
   const componentRef = useRef<HTMLDivElement>(null);
@@ -49,6 +49,8 @@ const FilmPrismV1: React.FC = () => {
   const nextSceneId = useRef(2);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [isSceneNavOpen, setIsSceneNavOpen] = useState(true);
+  const [editingElementId, setEditingElementId] = useState<number | null>(null);
+  const [newContent, setNewContent] = useState('');
 
   useEffect(() => {
     const handleFullScreenChange = () => {
@@ -78,7 +80,7 @@ const FilmPrismV1: React.FC = () => {
     }
   };
 
-  const updatePageCountAndRunTime = (content: Array<{ type: string; content: string }>) => {
+  const updatePageCountAndRunTime = (content: Array<{ id: number; type: string; content: string; editing: boolean }>) => {
     const lineCount = content.reduce((acc, item) => acc + item.content.split('\n').length, 0);
     const newPageCount = Math.ceil(lineCount / 55);
     setPageCount(newPageCount);
@@ -122,7 +124,7 @@ const FilmPrismV1: React.FC = () => {
     
     setScriptContent(prevContent => 
       prevContent.map(item => 
-        item.type === 'scene' && item.content.startsWith(`${id}  `) 
+        item.id === id
           ? { ...item, content: `${id}  ${updates.heading}` }
           : item
       )
@@ -133,7 +135,7 @@ const FilmPrismV1: React.FC = () => {
     setScenes(scenes.filter(scene => scene.id !== id));
     
     setScriptContent(prevContent => 
-      prevContent.filter(item => !(item.type === 'scene' && item.content.startsWith(`${id}  `)))
+      prevContent.filter(item => item.id !== id)
     );
   };
 
@@ -151,16 +153,38 @@ const FilmPrismV1: React.FC = () => {
   const commitSceneHeading = (id: number) => {
     const scene = scenes.find(scene => scene.id === id);
     if (scene) {
-      setScriptContent(prevContent => [...prevContent, { type: 'scene', content: `${scene.number}  ${scene.heading}` }]);
+      setScriptContent(prevContent => [...prevContent, { id: scene.id, type: 'scene', content: `${scene.number}  ${scene.heading}`, editing: false }]);
     }
   };
 
   const addScriptElement = (type: string) => {
+    const newId = scriptContent.length + 1;
     if (type === 'Scene Heading') {
       addScene();
     } else {
-      setScriptContent(prevContent => [...prevContent, { type: type.toLowerCase(), content: type.toUpperCase() + ':' }]);
+      setScriptContent(prevContent => [...prevContent, { id: newId, type: type.toLowerCase(), content: type.toUpperCase() + ':', editing: false }]);
     }
+  };
+
+  const handleEditClick = (id: number) => {
+    setEditingElementId(id);
+  };
+
+  const handleInputChange = (id: number, value: string) => {
+    setNewContent(value);
+    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: value } : item));
+  };
+
+  const handleSaveEdit = (id: number) => {
+    setEditingElementId(null);
+    setNewContent('');
+  };
+
+  const handleCancelEdit = (id: number) => {
+    setEditingElementId(null);
+    setNewContent('');
+    const originalContent = scriptContent.find(item => item.id === id)?.content;
+    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: originalContent || '' } : item));
   };
 
   const scriptElements = [
@@ -237,7 +261,7 @@ const FilmPrismV1: React.FC = () => {
               ))}
             </div>
             <div
-              className={`flex-grow w-full p-4 rounded font-mono text-sm ${
+              className={`flex-grow w-full p-4 rounded font-mono text-sm mt-4 ${
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
               } overflow-y-auto whitespace-pre-wrap`}
               style={{
@@ -247,12 +271,34 @@ const FilmPrismV1: React.FC = () => {
                 margin: '0 auto',
                 overflowWrap: 'break-word',
                 wordWrap: 'break-word',
-                paddingLeft: 'calc(1.3in + 1rem)', // Add 1.3 inch left margin plus some padding
+                paddingLeft: 'calc(1.3in + 1rem)', 
               }}
             >
               {scriptContent.map((item, index) => (
                 <div key={index} className={item.type}>
-                  {item.content}
+                  {editingElementId === item.id ? (
+                    <div className="flex items-center">
+                      <input
+                        type="text"
+                        value={newContent}
+                        onChange={(e) => handleInputChange(item.id, e.target.value)}
+                        className="border border-gray-300 rounded px-2 py-1"
+                      />
+                      <button onClick={() => handleSaveEdit(item.id)} className="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded">
+                        Save
+                      </button>
+                      <button onClick={() => handleCancelEdit(item.id)} className="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <span>{item.content}</span>
+                      <button onClick={() => handleEditClick(item.id)} className="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">
+                        Edit
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

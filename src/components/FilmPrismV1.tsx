@@ -176,12 +176,20 @@ const FilmPrismV1: React.FC = () => {
       const newScene = { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY', editing: false };
       addScene(newScene);
     } else {
-      setScriptContent(prevContent => [...prevContent, { 
-        id: newId, 
-        type: newType, 
-        content: newContent, 
-        editing: false 
-      }]);
+      // Check if an element of this type already exists
+      const existingElementIndex = scriptContent.findIndex(item => item.type === newType);
+
+      if (existingElementIndex !== -1) {
+        // Update the existing element
+        setScriptContent(prevContent => {
+          const updatedContent = [...prevContent];
+          updatedContent[existingElementIndex] = { ...updatedContent[existingElementIndex], content: newContent, id: newId };
+          return updatedContent;
+        });
+      } else {
+        // Add a new element
+        setScriptContent(prevContent => [...prevContent, { id: newId, type: newType, content: newContent, editing: false }]);
+      }
     }
   };
 
@@ -346,6 +354,7 @@ const FilmPrismV1: React.FC = () => {
                     ...(item.type === 'dialogue' && { textAlign: 'justify' }),
                     ...(item.type === 'transition' || item.type === 'fade in' ? { marginRight: '1rem' } : {}),
                     marginTop: '0.5rem', 
+                    ...(item.type === 'action' ? { marginLeft: '1.5rem' } : {}),
                   }}
                 >
                   {editingElementId === item.id ? (

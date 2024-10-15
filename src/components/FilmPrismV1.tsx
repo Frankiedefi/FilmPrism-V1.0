@@ -84,7 +84,7 @@ const FilmPrismV1: React.FC = () => {
   };
 
   const getNextSceneNumber = (content: string): number => {
-    const sceneRegex = /^\d+\.\s/gm;
+    const sceneRegex = /^\d+\s/gm;
     const matches = content.match(sceneRegex);
     if (matches) {
       const lastSceneNumber = parseInt(matches[matches.length - 1], 10);
@@ -93,30 +93,38 @@ const FilmPrismV1: React.FC = () => {
     return 1;
   };
 
+  const formatSceneHeading = (sceneNumber: number, description: string) => {
+    const leftPart = `${sceneNumber}    ${description}`;
+    const rightPart = `${sceneNumber}`;
+    const totalWidth = 70; // Adjust this value to move the right number closer to or further from the right margin
+    const padding = ' '.repeat(Math.max(0, totalWidth - leftPart.length - rightPart.length));
+    return `${leftPart}${padding}${rightPart}`;
+  };
+
   const addScriptElement = (type: string) => {
     let newElement = '';
     switch (type) {
       case 'Scene Heading':
         const nextSceneNumber = getNextSceneNumber(scriptContent);
-        newElement = `\n${nextSceneNumber}.     INT. LOCATION - DAY \n`;
+        newElement = `\n${formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY')}\n`;
         break;
       case 'Action':
-        newElement = '\n       Character does something.\n';
+        newElement = '\nCharacter does something.\n';
         break;
       case 'Character':
-        newElement = '\n                                   CHARACTER NAME';
+        newElement = '\n                           CHARACTER NAME';
         break;
       case 'Dialogue':
-        newElement = '\n       Character\'s dialogue goes here.\n';
+        newElement = '\n                  Character\'s dialogue goes here.\n';
         break;
       case 'Parenthetical':
-        newElement = '\n                               (under breath)';
+        newElement = '\n                          (under breath)';
         break;
       case 'Transition':
-        newElement = '\n       CUT TO:\n';
+        newElement = '\n\n                                                            CUT TO:\n\n';
         break;
       case 'FADE IN:':
-        newElement = '\n       FADE IN:\n';
+        newElement = '\n                                                            FADE IN:\n\n';
         break;
     }
     setScriptContent(prev => prev + newElement);
@@ -128,44 +136,33 @@ const FilmPrismV1: React.FC = () => {
     switch (type) {
       case 'Scene Heading':
         const nextSceneNumber = getNextSceneNumber(scriptContent);
-        previewText = `${nextSceneNumber}.     INT. LOCATION - DAY`;
+        previewText = formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY');
         break;
       case 'Action':
-        previewText = '       Character does something.';
+        previewText = 'Character does something.';
         break;
       case 'Character':
-        previewText = '                                   CHARACTER NAME';
+        previewText = '                           CHARACTER NAME';
         break;
       case 'Dialogue':
-        previewText = '       Character\'s dialogue goes here.';
+        previewText = '                  Character\'s dialogue goes here.';
         break;
       case 'Parenthetical':
-        previewText = '                               (under breath)';
+        previewText = '                          (under breath)';
         break;
       case 'Transition':
-        previewText = '       CUT TO:';
+        previewText = '                                                            CUT TO:';
         break;
       case 'FADE IN:':
-        previewText = '       FADE IN:';
+        previewText = '                                                            FADE IN:';
         break;
     }
     setPreviewElement(previewText);
   };
 
   const handleScriptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const lines = e.target.value.split('\n');
-    const formattedLines = lines.map(line => {
-      if (line.match(/^\d+\.\s/)) {
-        // This is a scene heading, ensure 5 spaces after the number
-        return line.replace(/^(\d+\.)(\s*)/, '$1     ');
-      } else if (line.trim() !== '' && !line.startsWith('       ')) {
-        // This is not an empty line and doesn't start with 7 spaces, ensure it starts with 7 spaces
-        return '       ' + line.trimStart();
-      }
-      return line; // Empty line or already formatted line, leave as is
-    });
-    const formattedContent = formattedLines.join('\n');
-    setScriptContent(formattedContent);
+    const newContent = e.target.value;
+    setScriptContent(newContent);
   };
 
   const handleEditorClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
@@ -176,14 +173,12 @@ const FilmPrismV1: React.FC = () => {
 
     if (cursorPosition === currentLineStart) {
       const currentLine = lines[lines.length - 1];
-      if (!currentLine.match(/^\d+\.\s/) && currentLine.trim() === '') {
-        // If it's not a scene heading, the line is empty, and the cursor is at the start, add 7 spaces
-        const newContent = textarea.value.slice(0, cursorPosition) + '       ' + textarea.value.slice(cursorPosition);
+      if (!currentLine.match(/^\d+\s/) && currentLine.trim() === '') {
+        const newContent = textarea.value.slice(0, cursorPosition) + '      ' + textarea.value.slice(cursorPosition);
         setScriptContent(newContent);
         
-        // Set cursor position after the inserted spaces
         setTimeout(() => {
-          textarea.setSelectionRange(cursorPosition + 7, cursorPosition + 7);
+          textarea.setSelectionRange(cursorPosition + 6, cursorPosition + 6);
         }, 0);
       }
     }
@@ -246,9 +241,18 @@ const FilmPrismV1: React.FC = () => {
               onClick={handleEditorClick}
               className={`w-full h-[calc(100vh-200px)] p-4 rounded font-mono text-sm ${
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
-              } resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 whitespace-pre`}
+              } resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 whitespace-pre-wrap`}
               placeholder="Start writing your script here..."
-              style={{ lineHeight: '1.5', textAlign: 'left' }}
+              style={{
+                lineHeight: '1.5',
+                textAlign: 'left',
+                paddingLeft: 'calc(1.2in + 1rem)',
+                paddingRight: 'calc(0.5in + 1rem)',
+                maxWidth: '8.5in',
+                margin: '0 auto',
+                overflowWrap: 'break-word',
+                wordWrap: 'break-word',
+              }}
             />
           </div>
         </div>

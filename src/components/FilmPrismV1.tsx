@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, Trash } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X } from 'lucide-react';
 
 const ScriptPal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,7 +56,6 @@ const FilmPrismV1: React.FC = () => {
   const [newSceneNumber, setNewSceneNumber] = useState('');
   const numberInputRef = useRef<HTMLInputElement>(null);
 
-
   useEffect(() => {
     const handleFullScreenChange = () => {
       setIsFullScreen(document.fullscreenElement === componentRef.current);
@@ -107,7 +106,7 @@ const FilmPrismV1: React.FC = () => {
           {scene.editing !== true ? (
             <>
               <Edit2 onClick={() => handleSceneHeadingEdit(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />
-              <Trash onClick={() => deleteScene(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+              <Trash2 onClick={() => deleteScene(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
             </>
           ) : (
             <>
@@ -139,10 +138,7 @@ const FilmPrismV1: React.FC = () => {
 
   const deleteScene = (id: number) => {
     setScenes(scenes.filter(scene => scene.id !== id));
-    
-    setScriptContent(prevContent => 
-      prevContent.filter(item => item.id !== id)
-    );
+    setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
 
   const handleSceneHeadingEdit = (id: number) => {
@@ -165,12 +161,27 @@ const FilmPrismV1: React.FC = () => {
 
   const addScriptElement = (type: string) => {
     const newId = scriptContent.length + 1;
+    let newContent = type.toUpperCase() + ':';
+    let newType = type.toLowerCase();
+    
+    if (type === 'Action') {
+      newContent = '   ' + newContent;
+    } else if (type === 'Character') {
+      newContent = newContent.trim(); // Remove any trailing colon
+      newType = 'character';
+    }
+    
     if (type === 'Scene Heading') {
       const newSceneNumber = scenes.length > 0 ? scenes[scenes.length - 1].number + 1 : 1;
       const newScene = { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY', editing: false };
       addScene(newScene);
     } else {
-      setScriptContent(prevContent => [...prevContent, { id: newId, type: type.toLowerCase(), content: type.toUpperCase() + ':', editing: false }]);
+      setScriptContent(prevContent => [...prevContent, { 
+        id: newId, 
+        type: newType, 
+        content: newContent, 
+        editing: false 
+      }]);
     }
   };
 
@@ -315,18 +326,30 @@ const FilmPrismV1: React.FC = () => {
                 overflowWrap: 'break-word',
                 wordWrap: 'break-word',
                 paddingLeft: 'calc(1.3in)', 
+                paddingRight: '2.5rem', 
+                marginTop: '0.5rem', 
               }}
             >
               {scriptContent.map((item, index) => (
                 <div 
                   key={index} 
-                  className={item.type}
+                  className={`${item.type}`}
                   onMouseEnter={() => setHoveredElementId(item.id)}
                   onMouseLeave={() => setHoveredElementId(null)}
-                  style={{marginBottom: '0.5rem'}} 
+                  style={{
+                    textAlign: 
+                      item.type === 'character' || item.type === 'parenthetical' || item.type === 'dialogue'
+                        ? 'center'
+                        : item.type === 'transition' || item.type === 'fade in'
+                          ? 'right'
+                          : 'left',
+                    ...(item.type === 'dialogue' && { textAlign: 'justify' }),
+                    ...(item.type === 'transition' || item.type === 'fade in' ? { marginRight: '1rem' } : {}),
+                    marginTop: '0.5rem', 
+                  }}
                 >
                   {editingElementId === item.id ? (
-                    <div className="flex items-center">
+                    <div className="flex items-center justify-center">
                       {item.type === 'scene' ? (
                         <>
                           <input
@@ -343,31 +366,44 @@ const FilmPrismV1: React.FC = () => {
                             value={newContent}
                             onChange={(e) => handleInputChange(item.id, e.target.value)}
                             className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
-                            style={{ opacity: 0.8 }}
+                            style={{ opacity: 0.8, width: 'calc(100% - 4rem)' }}
                           />
                         </>
                       ) : (
-                        <>
-                          <input
-                            type="text"
-                            ref={inputRef}
-                            value={newContent}
-                            onChange={(e) => handleInputChange(item.id, e.target.value)}
-                            className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
-                            style={{ opacity: 0.8 }}
-                          />
-                        </>
+                        <input
+                          type="text"
+                          ref={inputRef}
+                          value={newContent}
+                          onChange={(e) => handleInputChange(item.id, e.target.value)}
+                          className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
+                          style={{ opacity: 0.8, width: '100%' }}
+                        />
                       )}
                       <Check onClick={() => handleSaveEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
                       <X onClick={() => handleCancelEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
                     </div>
                   ) : (
-                    <div className="flex items-center">
-                      <span className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}>{item.content}</span>
+                    <div className={`flex items-center ${
+                      item.type === 'character' || item.type === 'parenthetical' || item.type === 'dialogue'
+                        ? 'justify-center'
+                        : item.type === 'transition' || item.type === 'fade in'
+                          ? 'justify-end'
+                          : ''
+                    }`}>
+                      <span 
+                        className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
+                        style={{
+                          ...(item.type === 'dialogue' && { textAlign: 'justify', width: '100%' }),
+                        }}
+                      >
+                        {item.content}
+                      </span>
                       {hoveredElementId === item.id && (
                         <>
                           <Edit2 onClick={() => handleEditClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />
-                          <Trash onClick={() => handleDeleteClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+                          {item.type !== 'scene' && (
+                            <Trash2 onClick={() => handleDeleteClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+                          )}
                         </>
                       )}
                     </div>

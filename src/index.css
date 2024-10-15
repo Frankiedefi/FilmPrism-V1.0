@@ -42,7 +42,9 @@
 }
 
 .screenplay .action {
-  margin-top: 1em;
+  margin: 1.5rem 0; /* Removed top margin, added 1.5rem margin top and bottom */
+  text-indent: 0; /* Remove leading spaces */
+  margin-left: 1.5rem;
 }
 
 .screenplay .character {

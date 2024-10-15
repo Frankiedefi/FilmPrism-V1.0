@@ -165,7 +165,7 @@ const FilmPrismV1: React.FC = () => {
     let newType = type.toLowerCase();
     
     if (type === 'Action') {
-      newContent = '   ' + newContent;
+      newContent = newContent.trim(); // Remove leading spaces
     } else if (type === 'Character') {
       newContent = newContent.trim(); // Remove any trailing colon
       newType = 'character';

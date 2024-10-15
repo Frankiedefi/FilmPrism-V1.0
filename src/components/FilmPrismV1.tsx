@@ -101,6 +101,38 @@ const FilmPrismV1: React.FC = () => {
     return `${leftPart}${padding}${rightPart}`;
   };
 
+  const formatDialogue = (text: string) => {
+    const lines = text.split('\n');
+    return lines.map((line, index) => {
+      if (index === 0) {
+        return '                  ' + line; // 18 spaces for the first line
+      } else {
+        return '               ' + line; // 15 spaces for subsequent lines
+      }
+    }).join('\n');
+  };
+
+  const wrapDialogue = (text: string, maxLength: number = 36) => {
+    const words = text.split(' ');
+    let lines = [];
+    let currentLine = '';
+
+    words.forEach(word => {
+      if ((currentLine + ' ' + word).length > maxLength) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine += (currentLine ? ' ' : '') + word;
+      }
+    });
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    return formatDialogue(lines.join('\n'));
+  };
+
   const addScriptElement = (type: string) => {
     let newElement = '';
     switch (type) {
@@ -109,13 +141,13 @@ const FilmPrismV1: React.FC = () => {
         newElement = `\n${formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY')}\n`;
         break;
       case 'Action':
-        newElement = '\n      Character does something.\n'; // Removed 6 spaces here
+        newElement = '\n      Character does something.\n';
         break;
       case 'Character':
         newElement = '\n                           CHARACTER NAME';
         break;
       case 'Dialogue':
-        newElement = '\n                  Character\'s dialogue goes here.\n';
+        newElement = '\n' + wrapDialogue('Character\'s dialogue goes here. This is a longer piece of dialogue to demonstrate wrapping.') + '\n';
         break;
       case 'Parenthetical':
         newElement = '\n                          (under breath)';
@@ -139,13 +171,13 @@ const FilmPrismV1: React.FC = () => {
         previewText = formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY');
         break;
       case 'Action':
-        previewText = '      Character does something.'; // Removed 6 spaces here
+        previewText = '      Character does something.';
         break;
       case 'Character':
         previewText = '                           CHARACTER NAME';
         break;
       case 'Dialogue':
-        previewText = '                  Character\'s dialogue goes here.';
+        previewText = wrapDialogue('Character\'s dialogue goes here. This is a longer piece of dialogue to demonstrate wrapping.');
         break;
       case 'Parenthetical':
         previewText = '                          (under breath)';
@@ -162,7 +194,16 @@ const FilmPrismV1: React.FC = () => {
 
   const handleScriptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
-    setScriptContent(newContent);
+    const lines = newContent.split('\n');
+    const formattedLines = lines.map(line => {
+      if (line.startsWith('                  ')) { // Dialogue first line
+        return wrapDialogue(line.trim());
+      } else if (line.startsWith('               ')) { // Dialogue continuation
+        return formatDialogue(line.trim());
+      }
+      return line;
+    });
+    setScriptContent(formattedLines.join('\n'));
   };
 
   const handleEditorClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
@@ -174,11 +215,11 @@ const FilmPrismV1: React.FC = () => {
     if (cursorPosition === currentLineStart) {
       const currentLine = lines[lines.length - 1];
       if (!currentLine.match(/^\d+\s/) && currentLine.trim() === '') {
-        const newContent = textarea.value.slice(0, cursorPosition) + '      ' + textarea.value.slice(cursorPosition); // Removed 6 spaces here
+        const newContent = textarea.value.slice(0, cursorPosition) + '      ' + textarea.value.slice(cursorPosition);
         setScriptContent(newContent);
         
         setTimeout(() => {
-          textarea.setSelectionRange(cursorPosition + 6, cursorPosition + 6); // Updated to 6 spaces
+          textarea.setSelectionRange(cursorPosition + 6, cursorPosition + 6);
         }, 0);
       }
     }

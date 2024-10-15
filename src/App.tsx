@@ -10,7 +10,6 @@ import { LLMProvider } from './contexts/LLMContext';
 function App() {
   return (
     <div>
-      <h1>FilmPro AI is loading...</h1>
       <LLMProvider>
         <Router>
           <Routes>

@@ -164,8 +164,9 @@ const FilmPrismV1: React.FC = () => {
     let newContent = type.toUpperCase() + ':';
     let newType = type.toLowerCase();
     
-    if (type === 'Action') {
+    if (type === 'Logline') {
       newContent = newContent.trim(); // Remove leading spaces
+      newContent = "A gripping tale of suspense and intrigue unfolds."; // More creative placeholder
     } else if (type === 'Character') {
       newContent = newContent.trim(); // Remove any trailing colon
       newType = 'character';
@@ -250,7 +251,7 @@ const FilmPrismV1: React.FC = () => {
   };
 
   const scriptElements = [
-    'Scene Heading', 'Action', 'Character', 'Dialogue', 'Parenthetical', 'Transition', 'FADE IN:'
+    'Scene Heading', 'Logline', 'Character', 'Dialogue', 'Parenthetical', 'Transition', 'FADE IN:'
   ];
 
   return (
@@ -355,6 +356,7 @@ const FilmPrismV1: React.FC = () => {
                     ...(item.type === 'transition' || item.type === 'fade in' ? { marginRight: '1rem' } : {}),
                     marginTop: '0.5rem', 
                     ...(item.type === 'action' ? { marginLeft: '1.5rem' } : {}),
+                    ...(item.type === 'logline' ? { marginLeft: '1.5rem' } : {}),
                   }}
                 >
                   {editingElementId === item.id ? (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, Trash } from 'lucide-react';
 
 const ScriptPal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -51,6 +51,9 @@ const FilmPrismV1: React.FC = () => {
   const [isSceneNavOpen, setIsSceneNavOpen] = useState(true);
   const [editingElementId, setEditingElementId] = useState<number | null>(null);
   const [newContent, setNewContent] = useState('');
+  const [hoveredElementId, setHoveredElementId] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     const handleFullScreenChange = () => {
@@ -87,7 +90,7 @@ const FilmPrismV1: React.FC = () => {
     setRunTime(`${Math.floor(newPageCount)}:${((lineCount % 55) * 60 / 55).toFixed(0).padStart(2, '0')}`);
   };
 
-  const formatSceneHeading = (scene: { id: number; number: number; heading: string }) => {
+  const formatSceneHeading = (scene: { id: number; number: number; heading: string; editing?: boolean }) => {
     return (
       <div className="scene-container flex items-center mb-2">
         <span className="scene-number mr-2">{scene.number}</span>
@@ -98,25 +101,26 @@ const FilmPrismV1: React.FC = () => {
         >
           {scene.heading}
         </span>
-        <button 
-          className="edit-button ml-2 p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition duration-300"
-          onClick={() => handleSceneHeadingEdit(scene.id)}
-        >
-          <Edit2 size={16} />
-        </button>
-        <button 
-          className="delete-button ml-2 p-1 rounded bg-red-600 text-white hover:bg-red-700 transition duration-300"
-          onClick={() => deleteScene(scene.id)}
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center">
+          {scene.editing !== true ? (
+            <>
+              <Edit2 onClick={() => handleSceneHeadingEdit(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />
+              <Trash onClick={() => deleteScene(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+            </>
+          ) : (
+            <>
+              <Check onClick={() => handleSaveEdit(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
+              <X onClick={() => handleCancelEdit(scene.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+            </>
+          )}
+        </div>
       </div>
     );
   };
 
-  const addScene = () => {
-    const newSceneNumber = scenes.length > 0 ? scenes[scenes.length - 1].number + 1 : 1;
-    setScenes([...scenes, { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY' }]);
+  const addScene = (newScene: { id: number; number: number; heading: string }) => {
+    setScenes([...scenes, newScene]);
+    setScriptContent(prevContent => [...prevContent, { id: newScene.id, type: 'scene', content: `${newScene.number}  ${newScene.heading}`, editing: false }]);
   };
 
   const updateScene = (id: number, updates: Partial<{ number: number; heading: string }>) => {
@@ -160,14 +164,21 @@ const FilmPrismV1: React.FC = () => {
   const addScriptElement = (type: string) => {
     const newId = scriptContent.length + 1;
     if (type === 'Scene Heading') {
-      addScene();
+      const newSceneNumber = scenes.length > 0 ? scenes[scenes.length - 1].number + 1 : 1;
+      const newScene = { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY', editing: false };
+      addScene(newScene);
     } else {
       setScriptContent(prevContent => [...prevContent, { id: newId, type: type.toLowerCase(), content: type.toUpperCase() + ':', editing: false }]);
     }
   };
 
   const handleEditClick = (id: number) => {
+    const element = scriptContent.find(item => item.id === id);
     setEditingElementId(id);
+    setNewContent(element?.content || ''); 
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   const handleInputChange = (id: number, value: string) => {
@@ -178,6 +189,7 @@ const FilmPrismV1: React.FC = () => {
   const handleSaveEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
+    setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
   };
 
   const handleCancelEdit = (id: number) => {
@@ -185,6 +197,11 @@ const FilmPrismV1: React.FC = () => {
     setNewContent('');
     const originalContent = scriptContent.find(item => item.id === id)?.content;
     setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: originalContent || '' } : item));
+    setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
 
   const scriptElements = [
@@ -261,7 +278,7 @@ const FilmPrismV1: React.FC = () => {
               ))}
             </div>
             <div
-              className={`flex-grow w-full p-4 rounded font-mono text-sm mt-4 ${
+              className={`flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${ // Added mt-2 for 0.5rem top margin
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
               } overflow-y-auto whitespace-pre-wrap`}
               style={{
@@ -271,32 +288,39 @@ const FilmPrismV1: React.FC = () => {
                 margin: '0 auto',
                 overflowWrap: 'break-word',
                 wordWrap: 'break-word',
-                paddingLeft: 'calc(1.3in + 1rem)', 
+                paddingLeft: 'calc(1.3in)', 
               }}
             >
               {scriptContent.map((item, index) => (
-                <div key={index} className={item.type}>
+                <div 
+                  key={index} 
+                  className={item.type}
+                  onMouseEnter={() => setHoveredElementId(item.id)}
+                  onMouseLeave={() => setHoveredElementId(null)}
+                  style={{marginBottom: '0.5rem'}} 
+                >
                   {editingElementId === item.id ? (
                     <div className="flex items-center">
                       <input
                         type="text"
+                        ref={inputRef}
                         value={newContent}
                         onChange={(e) => handleInputChange(item.id, e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1"
+                        className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`} 
+                        style={{ opacity: 0.8 }}
                       />
-                      <button onClick={() => handleSaveEdit(item.id)} className="ml-2 bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded">
-                        Save
-                      </button>
-                      <button onClick={() => handleCancelEdit(item.id)} className="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded">
-                        Cancel
-                      </button>
+                      <Check onClick={() => handleSaveEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
+                      <X onClick={() => handleCancelEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
                     </div>
                   ) : (
                     <div className="flex items-center">
-                      <span>{item.content}</span>
-                      <button onClick={() => handleEditClick(item.id)} className="ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">
-                        Edit
-                      </button>
+                      <span className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}>{item.content}</span>
+                      {hoveredElementId === item.id && (
+                        <>
+                          <Edit2 onClick={() => handleEditClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />
+                          <Trash onClick={() => handleDeleteClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

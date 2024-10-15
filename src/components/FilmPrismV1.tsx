@@ -94,9 +94,9 @@ const FilmPrismV1: React.FC = () => {
   };
 
   const formatSceneHeading = (sceneNumber: number, description: string) => {
-    const leftPart = `${sceneNumber}    ${description}`;
+    const leftPart = `${sceneNumber}     ${description}`;
     const rightPart = `${sceneNumber}`;
-    const totalWidth = 70; // Adjust this value to move the right number closer to or further from the right margin
+    const totalWidth = 70;
     const padding = ' '.repeat(Math.max(0, totalWidth - leftPart.length - rightPart.length));
     return `${leftPart}${padding}${rightPart}`;
   };
@@ -109,7 +109,7 @@ const FilmPrismV1: React.FC = () => {
         newElement = `\n${formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY')}\n`;
         break;
       case 'Action':
-        newElement = '\nCharacter does something.\n';
+        newElement = '\n      Character does something.\n'; // Removed 6 spaces here
         break;
       case 'Character':
         newElement = '\n                           CHARACTER NAME';
@@ -139,7 +139,7 @@ const FilmPrismV1: React.FC = () => {
         previewText = formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY');
         break;
       case 'Action':
-        previewText = 'Character does something.';
+        previewText = '      Character does something.'; // Removed 6 spaces here
         break;
       case 'Character':
         previewText = '                           CHARACTER NAME';
@@ -174,11 +174,11 @@ const FilmPrismV1: React.FC = () => {
     if (cursorPosition === currentLineStart) {
       const currentLine = lines[lines.length - 1];
       if (!currentLine.match(/^\d+\s/) && currentLine.trim() === '') {
-        const newContent = textarea.value.slice(0, cursorPosition) + '      ' + textarea.value.slice(cursorPosition);
+        const newContent = textarea.value.slice(0, cursorPosition) + '      ' + textarea.value.slice(cursorPosition); // Removed 6 spaces here
         setScriptContent(newContent);
         
         setTimeout(() => {
-          textarea.setSelectionRange(cursorPosition + 6, cursorPosition + 6);
+          textarea.setSelectionRange(cursorPosition + 6, cursorPosition + 6); // Updated to 6 spaces
         }, 0);
       }
     }

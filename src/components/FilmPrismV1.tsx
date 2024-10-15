@@ -88,7 +88,8 @@ const FilmPrismV1: React.FC = () => {
   const formatSceneHeading = (scene: { id: number; number: number; heading: string }) => {
     return (
       <div className="scene-container flex items-center mb-2">
-        <span className="scene-number mr-2">{scene.number}.</span>
+        <span className="scene-number mr-2">{scene.number}</span>
+        <span className="mr-2">{'\u00A0'.repeat(2)}</span>
         <span 
           className="scene-heading flex-grow cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 px-2 py-1 rounded"
           onClick={() => commitSceneHeading(scene.id)}
@@ -121,8 +122,8 @@ const FilmPrismV1: React.FC = () => {
     
     setScriptContent(prevContent => 
       prevContent.map(item => 
-        item.type === 'scene' && item.content.startsWith(`${id}.`) 
-          ? { ...item, content: `${id}. ${updates.heading}` }
+        item.type === 'scene' && item.content.startsWith(`${id}  `) 
+          ? { ...item, content: `${id}  ${updates.heading}` }
           : item
       )
     );
@@ -132,7 +133,7 @@ const FilmPrismV1: React.FC = () => {
     setScenes(scenes.filter(scene => scene.id !== id));
     
     setScriptContent(prevContent => 
-      prevContent.filter(item => !(item.type === 'scene' && item.content.startsWith(`${id}.`)))
+      prevContent.filter(item => !(item.type === 'scene' && item.content.startsWith(`${id}  `)))
     );
   };
 
@@ -150,7 +151,7 @@ const FilmPrismV1: React.FC = () => {
   const commitSceneHeading = (id: number) => {
     const scene = scenes.find(scene => scene.id === id);
     if (scene) {
-      setScriptContent(prevContent => [...prevContent, { type: 'scene', content: `${scene.number}. ${scene.heading}` }]);
+      setScriptContent(prevContent => [...prevContent, { type: 'scene', content: `${scene.number}  ${scene.heading}` }]);
     }
   };
 
@@ -246,6 +247,7 @@ const FilmPrismV1: React.FC = () => {
                 margin: '0 auto',
                 overflowWrap: 'break-word',
                 wordWrap: 'break-word',
+                paddingLeft: 'calc(1.3in + 1rem)', // Add 1.3 inch left margin plus some padding
               }}
             >
               {scriptContent.map((item, index) => (

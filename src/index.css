@@ -19,6 +19,20 @@
   font-family: 'Courier Prime', monospace;
   font-size: 12pt;
   line-height: 1;
+  position: relative;
+  padding-left: 25px; /* Increased padding to make room for the wider shading */
+}
+
+/* Binder shading effect */
+.screenplay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25px; /* Increased width of the shaded area */
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.4), transparent); /* Increased opacity for more intensity */
+  pointer-events: none; /* Ensures the pseudo-element doesn't interfere with text selection */
 }
 
 .screenplay .scene-heading {
@@ -70,4 +84,22 @@
 
 .script-editor .transition {
   color: #ef4444; /* Red */
+}
+
+/* New class for script content container with shading effect */
+.script-content-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.script-content-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.4), transparent);
+  pointer-events: none;
+  z-index: 1;
 }

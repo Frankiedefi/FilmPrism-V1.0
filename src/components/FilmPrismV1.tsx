@@ -315,7 +315,7 @@ const FilmPrismV1: React.FC = () => {
               ))}
             </div>
             <div
-              className={`flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${
+              className={`script-content-container flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
               } overflow-y-auto whitespace-pre-wrap`}
               style={{

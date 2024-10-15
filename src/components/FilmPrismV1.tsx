@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film } from 'lucide-react';
 
 const ScriptPal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -41,12 +41,14 @@ const ScriptPal: React.FC = () => {
 const FilmPrismV1: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const [scriptContent, setScriptContent] = useState<string>('');
+  const [scriptContent, setScriptContent] = useState<Array<{ type: string; content: string }>>([]);
   const [pageCount, setPageCount] = useState(1);
   const [runTime, setRunTime] = useState('0:00');
-  const [previewElement, setPreviewElement] = useState<string | null>(null);
   const componentRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const [scenes, setScenes] = useState([{ id: 1, number: 1, heading: 'INT. LOCATION - DAY' }]);
+  const nextSceneId = useRef(2);
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [isSceneNavOpen, setIsSceneNavOpen] = useState(true);
 
   useEffect(() => {
     const handleFullScreenChange = () => {
@@ -76,152 +78,87 @@ const FilmPrismV1: React.FC = () => {
     }
   };
 
-  const updatePageCountAndRunTime = (content: string) => {
-    const lineCount = content.split('\n').length;
+  const updatePageCountAndRunTime = (content: Array<{ type: string; content: string }>) => {
+    const lineCount = content.reduce((acc, item) => acc + item.content.split('\n').length, 0);
     const newPageCount = Math.ceil(lineCount / 55);
     setPageCount(newPageCount);
     setRunTime(`${Math.floor(newPageCount)}:${((lineCount % 55) * 60 / 55).toFixed(0).padStart(2, '0')}`);
   };
 
-  const getNextSceneNumber = (content: string): number => {
-    const sceneRegex = /^\d+\s/gm;
-    const matches = content.match(sceneRegex);
-    if (matches) {
-      const lastSceneNumber = parseInt(matches[matches.length - 1], 10);
-      return lastSceneNumber + 1;
-    }
-    return 1;
+  const formatSceneHeading = (scene: { id: number; number: number; heading: string }) => {
+    return (
+      <div className="scene-container flex items-center mb-2">
+        <span className="scene-number mr-2">{scene.number}.</span>
+        <span 
+          className="scene-heading flex-grow cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 px-2 py-1 rounded"
+          onClick={() => commitSceneHeading(scene.id)}
+        >
+          {scene.heading}
+        </span>
+        <button 
+          className="edit-button ml-2 p-1 rounded bg-blue-600 text-white hover:bg-blue-700 transition duration-300"
+          onClick={() => handleSceneHeadingEdit(scene.id)}
+        >
+          <Edit2 size={16} />
+        </button>
+        <button 
+          className="delete-button ml-2 p-1 rounded bg-red-600 text-white hover:bg-red-700 transition duration-300"
+          onClick={() => deleteScene(scene.id)}
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    );
   };
 
-  const formatSceneHeading = (sceneNumber: number, description: string) => {
-    const leftPart = `${sceneNumber}     ${description}`;
-    const rightPart = `${sceneNumber}`;
-    const totalWidth = 70;
-    const padding = ' '.repeat(Math.max(0, totalWidth - leftPart.length - rightPart.length));
-    return `${leftPart}${padding}${rightPart}`;
+  const addScene = () => {
+    const newSceneNumber = scenes.length > 0 ? scenes[scenes.length - 1].number + 1 : 1;
+    setScenes([...scenes, { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY' }]);
   };
 
-  const formatDialogue = (text: string) => {
-    const lines = text.split('\n');
-    return lines.map((line, index) => {
-      if (index === 0) {
-        return '                  ' + line; // 18 spaces for the first line
-      } else {
-        return '               ' + line; // 15 spaces for subsequent lines
+  const updateScene = (id: number, updates: Partial<{ number: number; heading: string }>) => {
+    setScenes(scenes.map(scene => scene.id === id ? { ...scene, ...updates } : scene));
+    
+    setScriptContent(prevContent => 
+      prevContent.map(item => 
+        item.type === 'scene' && item.content.startsWith(`${id}.`) 
+          ? { ...item, content: `${id}. ${updates.heading}` }
+          : item
+      )
+    );
+  };
+
+  const deleteScene = (id: number) => {
+    setScenes(scenes.filter(scene => scene.id !== id));
+    
+    setScriptContent(prevContent => 
+      prevContent.filter(item => !(item.type === 'scene' && item.content.startsWith(`${id}.`)))
+    );
+  };
+
+  const handleSceneHeadingEdit = (id: number) => {
+    const sceneIndex = scenes.findIndex((scene) => scene.id === id);
+    if (sceneIndex !== -1) {
+      const scene = scenes[sceneIndex];
+      const newHeading = prompt("Edit Scene Heading:", scene.heading);
+      if (newHeading !== null) {
+        updateScene(id, { heading: newHeading });
       }
-    }).join('\n');
+    }
   };
 
-  const wrapDialogue = (text: string, maxLength: number = 36) => {
-    const words = text.split(' ');
-    let lines = [];
-    let currentLine = '';
-
-    words.forEach(word => {
-      if ((currentLine + ' ' + word).length > maxLength) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine += (currentLine ? ' ' : '') + word;
-      }
-    });
-
-    if (currentLine) {
-      lines.push(currentLine);
+  const commitSceneHeading = (id: number) => {
+    const scene = scenes.find(scene => scene.id === id);
+    if (scene) {
+      setScriptContent(prevContent => [...prevContent, { type: 'scene', content: `${scene.number}. ${scene.heading}` }]);
     }
-
-    return formatDialogue(lines.join('\n'));
   };
 
   const addScriptElement = (type: string) => {
-    let newElement = '';
-    switch (type) {
-      case 'Scene Heading':
-        const nextSceneNumber = getNextSceneNumber(scriptContent);
-        newElement = `\n${formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY')}\n`;
-        break;
-      case 'Action':
-        newElement = '\n      Character does something.\n';
-        break;
-      case 'Character':
-        newElement = '\n                           CHARACTER NAME';
-        break;
-      case 'Dialogue':
-        newElement = '\n' + wrapDialogue('Character\'s dialogue goes here. This is a longer piece of dialogue to demonstrate wrapping.') + '\n';
-        break;
-      case 'Parenthetical':
-        newElement = '\n                          (under breath)';
-        break;
-      case 'Transition':
-        newElement = '\n\n                                                            CUT TO:\n\n';
-        break;
-      case 'FADE IN:':
-        newElement = '\n                                                            FADE IN:\n\n';
-        break;
-    }
-    setScriptContent(prev => prev + newElement);
-    setPreviewElement(null);
-  };
-
-  const handlePreview = (type: string) => {
-    let previewText = '';
-    switch (type) {
-      case 'Scene Heading':
-        const nextSceneNumber = getNextSceneNumber(scriptContent);
-        previewText = formatSceneHeading(nextSceneNumber, 'INT. LOCATION - DAY');
-        break;
-      case 'Action':
-        previewText = '      Character does something.';
-        break;
-      case 'Character':
-        previewText = '                           CHARACTER NAME';
-        break;
-      case 'Dialogue':
-        previewText = wrapDialogue('Character\'s dialogue goes here. This is a longer piece of dialogue to demonstrate wrapping.');
-        break;
-      case 'Parenthetical':
-        previewText = '                          (under breath)';
-        break;
-      case 'Transition':
-        previewText = '                                                            CUT TO:';
-        break;
-      case 'FADE IN:':
-        previewText = '                                                            FADE IN:';
-        break;
-    }
-    setPreviewElement(previewText);
-  };
-
-  const handleScriptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    const lines = newContent.split('\n');
-    const formattedLines = lines.map(line => {
-      if (line.startsWith('                  ')) { // Dialogue first line
-        return wrapDialogue(line.trim());
-      } else if (line.startsWith('               ')) { // Dialogue continuation
-        return formatDialogue(line.trim());
-      }
-      return line;
-    });
-    setScriptContent(formattedLines.join('\n'));
-  };
-
-  const handleEditorClick = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    const textarea = e.currentTarget;
-    const cursorPosition = textarea.selectionStart;
-    const lines = textarea.value.slice(0, cursorPosition).split('\n');
-    const currentLineStart = textarea.value.lastIndexOf('\n', cursorPosition - 1) + 1;
-
-    if (cursorPosition === currentLineStart) {
-      const currentLine = lines[lines.length - 1];
-      if (!currentLine.match(/^\d+\s/) && currentLine.trim() === '') {
-        const newContent = textarea.value.slice(0, cursorPosition) + '      ' + textarea.value.slice(cursorPosition);
-        setScriptContent(newContent);
-        
-        setTimeout(() => {
-          textarea.setSelectionRange(cursorPosition + 6, cursorPosition + 6);
-        }, 0);
-      }
+    if (type === 'Scene Heading') {
+      addScene();
+    } else {
+      setScriptContent(prevContent => [...prevContent, { type: type.toLowerCase(), content: type.toUpperCase() + ':' }]);
     }
   };
 
@@ -259,42 +196,64 @@ const FilmPrismV1: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex-grow flex flex-col items-center p-4">
-          <div className="mb-4 flex flex-wrap justify-center gap-2 w-full max-w-3xl">
-            {scriptElements.map((element, index) => (
+        <div className="flex-grow flex p-4">
+          <div className={`transition-all duration-300 ${isSceneNavOpen ? 'w-1/4' : 'w-12'} flex flex-col`}>
+            <div className="flex items-center justify-between mb-2">
+              <Film className="h-6 w-6" />
               <button
-                key={index}
-                onClick={() => addScriptElement(element)}
-                onMouseEnter={() => handlePreview(element)}
-                onMouseLeave={() => setPreviewElement(null)}
-                className="px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 transition duration-300"
+                onClick={() => setIsSceneNavOpen(!isSceneNavOpen)}
+                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
               >
-                {element}
+                {isSceneNavOpen ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
               </button>
-            ))}
+            </div>
+            {isSceneNavOpen && (
+              <div className="overflow-y-auto flex-grow">
+                <h3 className="text-lg font-semibold mb-2">Scene Navigator</h3>
+                {scenes.map((scene) => (
+                  <div key={scene.id}>
+                    {formatSceneHeading(scene)}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-
-          <div className="w-full max-w-3xl relative">
-            <textarea
-              ref={editorRef}
-              value={previewElement !== null ? scriptContent + '\n' + previewElement : scriptContent}
-              onChange={handleScriptChange}
-              onClick={handleEditorClick}
-              className={`w-full h-[calc(100vh-200px)] p-4 rounded font-mono text-sm ${
+          <div className={`transition-all duration-300 ${isSceneNavOpen ? 'w-3/4' : 'flex-grow'} flex flex-col`}>
+            <div className="mb-4 flex justify-center">
+              {scriptElements.map((element, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setSelectedElement(element);
+                    addScriptElement(element);
+                  }}
+                  className={`px-2 py-1 text-xs rounded mx-1 ${
+                    selectedElement === element ? 'bg-indigo-700' : 'bg-indigo-600'
+                  } text-white hover:bg-indigo-700 transition duration-300`}
+                >
+                  {element}
+                </button>
+              ))}
+            </div>
+            <div
+              className={`flex-grow w-full p-4 rounded font-mono text-sm ${
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
-              } resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 whitespace-pre-wrap`}
-              placeholder="Start writing your script here..."
+              } overflow-y-auto whitespace-pre-wrap`}
               style={{
                 lineHeight: '1.5',
                 textAlign: 'left',
-                paddingLeft: 'calc(1.2in + 1rem)',
-                paddingRight: 'calc(0.5in + 1rem)',
                 maxWidth: '8.5in',
                 margin: '0 auto',
                 overflowWrap: 'break-word',
                 wordWrap: 'break-word',
               }}
-            />
+            >
+              {scriptContent.map((item, index) => (
+                <div key={index} className={item.type}>
+                  {item.content}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

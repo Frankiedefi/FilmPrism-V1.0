@@ -1,28 +1,30 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { LLMContext } from '../contexts/LLMContext';
 
-type LLMOption = 'cohere';
+const LLMSelector: React.FC = () => {
+  const { selectedLLM, setSelectedLLM } = useContext(LLMContext);
 
-interface LLMSelectorProps {
-  selectedLLM: LLMOption;
-  onSelectLLM: (llm: LLMOption) => void;
-}
+  const handleLLMChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedLLM(event.target.value);
+  };
 
-function LLMSelector({ selectedLLM, onSelectLLM }: LLMSelectorProps) {
   return (
-    <div className="flex items-center bg-indigo-100 p-2 rounded-md">
-      <label htmlFor="llm-select" className="text-sm font-medium text-indigo-700 mr-2">
+    <div className="flex items-center bg-indigo-100 px-4 py-2 rounded">
+      <label htmlFor="llm-selector" className="mr-2 font-semibold text-indigo-700">
         AI Model:
       </label>
       <select
-        id="llm-select"
+        id="llm-selector"
         value={selectedLLM}
-        onChange={(e) => onSelectLLM(e.target.value as LLMOption)}
-        className="block pl-3 pr-10 py-1 text-base border-indigo-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-white"
+        onChange={handleLLMChange}
+        className="px-2 py-1 border rounded bg-white"
       >
+        <option value="openai">OpenAI</option>
         <option value="cohere">Cohere</option>
+        <option value="anthropic">Anthropic</option>
       </select>
     </div>
   );
-}
+};
 
 export default LLMSelector;

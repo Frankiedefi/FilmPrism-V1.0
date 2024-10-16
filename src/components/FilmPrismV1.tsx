@@ -62,14 +62,18 @@ const FilmPrismV1: React.FC = () => {
   const [newSceneNumber, setNewSceneNumber] = useState('');
   const numberInputRef = useRef<HTMLInputElement>(null);
   const [isTransitionMenuOpen, setIsTransitionMenuOpen] = useState(false);
+  const transitionMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleFullScreenChange = () => {
-      setIsFullScreen(document.fullscreenElement === componentRef.current);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (transitionMenuRef.current && !transitionMenuRef.current.contains(event.target as Node)) {
+        setIsTransitionMenuOpen(false);
+      }
     };
-    document.addEventListener('fullscreenchange', handleFullScreenChange);
+
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullScreenChange);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
@@ -371,7 +375,7 @@ const FilmPrismV1: React.FC = () => {
                   {element.icon}
                 </button>
                 {element.type === 'Transition' && isTransitionMenuOpen && (
-                  <div className="absolute left-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10">
+                  <div ref={transitionMenuRef} className="absolute left-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10">
                     {transitions.map((transition) => (
                       <button
                         key={transition}
@@ -398,26 +402,28 @@ const FilmPrismV1: React.FC = () => {
               overflowWrap: 'break-word',
               wordWrap: 'break-word',
               paddingLeft: 'calc(1.3in)',
-              paddingRight: '2.5rem',
+              paddingRight: '4.5rem',
+              paddingTop: '3.5rem',
+              paddingBottom: '1.5rem',
             }}
           >
             {scriptContent.map((item, index) => (
               <div
                 key={index}
-                className={`${item.type}`}
+                className={`${item.type} mb-4`}
                 onMouseEnter={() => setHoveredElementId(item.id)}
                 onMouseLeave={() => setHoveredElementId(null)}
                 style={{
-                  textAlign:
-                    item.type === 'character' || item.type === 'parenthetical' || item.type === 'dialogue'
-                      ? 'center'
-                      : item.type === 'transition' || item.type === 'fade in'
-                        ? 'right'
-                        : 'left',
+                  textAlign: transitions.includes(item.content) ? 'right' : 'left',
                   ...(item.type === 'dialogue' && { marginLeft: '10.5rem', marginRight: '14.5rem' }),
-                  ...(item.type === 'transition' || item.type === 'fade in' ? { marginRight: '2rem' } : {}),
+                  ...(transitions.includes(item.content) && { 
+                    width: '100%',
+                    paddingRight: '0',
+                    marginRight: '0.5rem', // Compensate for container's right padding
+                    textTransform: 'uppercase'
+                  }),
                   marginBottom: item.type === 'character' || item.type === 'parenthetical' ? '0' : '1rem',
-                  ...(item.type === 'logline' ? { marginLeft: '1.5rem', marginRight: '3rem' } : {}),
+                  ...(item.type === 'logline' && { marginLeft: '1.5rem', marginRight: '3rem' }),
                 }}
               >
                 {editingElementId === item.id ? (
@@ -462,14 +468,15 @@ const FilmPrismV1: React.FC = () => {
                         ? 'justify-end'
                         : ''
                   }`}>
-                    <span
-                      className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
-                      style={{
-                        ...(item.type === 'dialogue' && { textAlign: 'justify', width: '100%' }),
-                      }}
-                    >
-                      {item.content}
-                    </span>
+                <span
+                  className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
+                  style={{
+                    ...(item.type === 'dialogue' && { textAlign: 'justify', width: '100%' }),
+                    ...(transitions.includes(item.content) && { display: 'inline-block', width: '100%' }),
+                  }}
+                >
+                  {item.content}
+                </span>
                     {hoveredElementId === item.id && (
                       <>
                         <Edit2 onClick={() => handleEditClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />

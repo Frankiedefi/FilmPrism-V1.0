@@ -39,6 +39,12 @@ const ScriptPal: React.FC = () => {
 };
 
 const FilmPrismV1: React.FC = () => {
+  const characterNames = [
+    "Ethan Cross", "Lila Montgomery", "Avery Hale", "Jackson Pierce", "Isla Reed",
+    "Mason Everett", "Natalia Stone", "Finn Gallagher", "Elena Cruz", "Oliver Bennett",
+    "Zara Knight", "Kieran Wolfe", "Rosalind Kane", "Silas Harper", "Daphne Archer",
+    "Luca Romano", "Sophie Delacroix", "Leo Hunt", "Amara Fox", "Jasper Quinn"
+  ];
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [scriptContent, setScriptContent] = useState<Array<{ id: number; type: string; content: string; editing: boolean }>>([]);
@@ -118,12 +124,10 @@ const FilmPrismV1: React.FC = () => {
       </div>
     );
   };
-
   const addScene = (newScene: { id: number; number: number; heading: string }) => {
     setScenes([...scenes, newScene]);
     setScriptContent(prevContent => [...prevContent, { id: newScene.id, type: 'scene', content: `${newScene.number}  ${newScene.heading}`, editing: false }]);
   };
-
   const updateScene = (id: number, updates: Partial<{ number: number; heading: string }>) => {
     setScenes(scenes.map(scene => scene.id === id ? { ...scene, ...updates } : scene));
     
@@ -135,12 +139,10 @@ const FilmPrismV1: React.FC = () => {
       )
     );
   };
-
   const deleteScene = (id: number) => {
     setScenes(scenes.filter(scene => scene.id !== id));
     setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
-
   const handleSceneHeadingEdit = (id: number) => {
     const sceneIndex = scenes.findIndex((scene) => scene.id === id);
     if (sceneIndex !== -1) {
@@ -151,25 +153,27 @@ const FilmPrismV1: React.FC = () => {
       }
     }
   };
-
   const commitSceneHeading = (id: number) => {
     const scene = scenes.find(scene => scene.id === id);
     if (scene) {
       setScriptContent(prevContent => [...prevContent, { id: scene.id, type: 'scene', content: `${scene.number}  ${scene.heading}`, editing: false }]);
     }
   };
-
   const addScriptElement = (type: string) => {
     const newId = scriptContent.length + 1;
     let newContent = type.toUpperCase() + ':';
     let newType = type.toLowerCase();
     
     if (type === 'Logline') {
-      newContent = newContent.trim(); // Remove leading spaces
-      newContent = "A gripping tale of suspense and intrigue unfolds."; // More creative placeholder
+      newContent = newContent.trim();
+      newContent = "A gripping tale of suspense and intrigue unfolds.";
     } else if (type === 'Character') {
-      newContent = newContent.trim(); // Remove any trailing colon
+      const randomIndex = Math.floor(Math.random() * characterNames.length);
+      newContent = characterNames[randomIndex];
       newType = 'character';
+    } else if (type === 'Parenthetical') {
+      newContent = '(beat)';
+      newType = 'parenthetical';
     }
     
     if (type === 'Scene Heading') {
@@ -177,23 +181,9 @@ const FilmPrismV1: React.FC = () => {
       const newScene = { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY', editing: false };
       addScene(newScene);
     } else {
-      // Check if an element of this type already exists
-      const existingElementIndex = scriptContent.findIndex(item => item.type === newType);
-
-      if (existingElementIndex !== -1) {
-        // Update the existing element
-        setScriptContent(prevContent => {
-          const updatedContent = [...prevContent];
-          updatedContent[existingElementIndex] = { ...updatedContent[existingElementIndex], content: newContent, id: newId };
-          return updatedContent;
-        });
-      } else {
-        // Add a new element
-        setScriptContent(prevContent => [...prevContent, { id: newId, type: newType, content: newContent, editing: false }]);
-      }
+      setScriptContent(prevContent => [...prevContent, { id: newId, type: newType, content: newContent, editing: false }]);
     }
   };
-
   const handleEditClick = (id: number) => {
     const element = scriptContent.find(item => item.id === id);
     setEditingElementId(id);
@@ -211,31 +201,29 @@ const FilmPrismV1: React.FC = () => {
       numberInputRef.current.focus();
     }
   };
-
   const handleInputChange = (id: number, value: string) => {
     setNewContent(value);
-
-    const trimmedValue = value.trim(); // Trim whitespace
-
-    setScriptContent(prevContent =>
-      prevContent.map(item =>
-        item.id === id ? { ...item, content: trimmedValue } : item // Use trimmed value directly
-      )
-    );
-
+    const trimmedValue = value.trim();
+    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: trimmedValue } : item));
+    const sceneIndex = scenes.findIndex(scene => scene.id === id);
+    if (sceneIndex !== -1) {
+      setScenes(scenes.map(scene => scene.id === id ? { ...scene, heading: trimmedValue } : scene));
+    }
+  };
+  const handleInputNumberChange = (id: number, value: string) => {
+    setNewSceneNumber(value);
+    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: `${value}  ${newContent}` } : item));
     const sceneIndex = scenes.findIndex(scene => scene.id === id);
     if (sceneIndex !== -1) {
       setScenes(scenes.map(scene => scene.id === id ? { ...scene, number: parseInt(value, 10) } : scene));
     }
   };
-
   const handleSaveEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
     setNewSceneNumber('');
     setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
   };
-
   const handleCancelEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
@@ -244,15 +232,12 @@ const FilmPrismV1: React.FC = () => {
     setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: originalContent || '' } : item));
     setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
   };
-
   const handleDeleteClick = (id: number) => {
     setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
-
   const scriptElements = [
     'Scene Heading', 'Logline', 'Character', 'Dialogue', 'Parenthetical', 'Transition', 'FADE IN:'
   ];
-
   return (
     <React.Fragment>
       <div 
@@ -282,7 +267,6 @@ const FilmPrismV1: React.FC = () => {
             </button>
           </div>
         </div>
-
         <div className="flex-grow flex p-4">
           <div className={`transition-all duration-300 ${isSceneNavOpen ? 'w-1/4' : 'w-12'} flex flex-col`}>
             <div className="flex items-center justify-between mb-2">
@@ -366,7 +350,7 @@ const FilmPrismV1: React.FC = () => {
                             type="text"
                             ref={numberInputRef}
                             value={newSceneNumber}
-                            onChange={(e) => handleInputNumberChange(item.id, e.target.value)}
+                            onChange={(e) => handleInputChange(item.id, e.target.value)}
                             className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mr-2 mt-2`}
                             style={{ opacity: 0.8, width: '3rem' }}
                           />
@@ -399,7 +383,7 @@ const FilmPrismV1: React.FC = () => {
                         : item.type === 'transition' || item.type === 'fade in'
                           ? 'justify-end'
                           : ''
-                    }`}>
+                     }`}>
                       <span 
                         className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
                         style={{

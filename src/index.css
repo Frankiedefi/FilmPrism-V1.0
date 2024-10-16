@@ -39,29 +39,34 @@
   text-transform: uppercase;
   margin-top: 2em;
   color: #3b82f6; /* Blue */
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .action {
   margin: 1.5rem 0; /* Removed top margin, added 1.5rem margin top and bottom */
   text-indent: 0; /* Remove leading spaces */
   margin-left: 1.5rem;
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .character {
   margin-top: 1em;
   margin-left: 2.5in;
   color: #10b981; /* Green */
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .dialogue {
   margin-left: 1in;
   margin-right: 1.5in;
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .parenthetical {
   margin-left: 1.8in;
   margin-right: 1.8in;
   color: #6b7280; /* Gray */
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .transition {
@@ -69,6 +74,7 @@
   margin-top: 1em;
   text-align: right;
   color: #ef4444; /* Red */
+  padding: 0; /* Removed padding */
 }
 
 /* Syntax highlighting */

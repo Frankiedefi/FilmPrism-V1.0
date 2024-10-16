@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ChevronDown } from 'lucide-react';
 
 const ScriptPal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -61,6 +61,7 @@ const FilmPrismV1: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [newSceneNumber, setNewSceneNumber] = useState('');
   const numberInputRef = useRef<HTMLInputElement>(null);
+  const [isTransitionMenuOpen, setIsTransitionMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleFullScreenChange = () => {
@@ -161,7 +162,7 @@ const FilmPrismV1: React.FC = () => {
   };
   const addScriptElement = (type: string) => {
     const newId = scriptContent.length + 1;
-    let newContent = type.toUpperCase() + ':';
+    let newContent = type.trim().toUpperCase(); 
     let newType = type.toLowerCase();
 
     if (type === 'Logline') {
@@ -265,8 +266,20 @@ const FilmPrismV1: React.FC = () => {
     setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
   const scriptElements = [
-    'Scene Heading', 'Logline', 'Character', 'Dialogue', 'Parenthetical', 'Transition', 'FADE IN:'
+    'Scene Heading', 'Logline', 'Character', 'Dialogue', 'Parenthetical', 'Transition'
   ];
+  const transitions = [
+    'CUT TO:',
+    'DISSOLVE TO:',
+    'FADE IN:',
+    'FADE OUT:',
+    'SMASH CUT TO:'
+  ];
+  const handleTransitionSelect = (transition: string) => {
+    addScriptElement(transition);
+    setIsTransitionMenuOpen(false);
+  };
+
   return (
     <React.Fragment>
       <div 
@@ -338,7 +351,7 @@ const FilmPrismV1: React.FC = () => {
             <div
               className={`script-content-container flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${
                 theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
-              } overflow-y-auto whitespace-pre-wrap`}
+              } overflow-y-auto whitespace-pre-wrap relative`}
               style={{
                 lineHeight: '1.5',
                 textAlign: 'left',
@@ -348,9 +361,32 @@ const FilmPrismV1: React.FC = () => {
                 wordWrap: 'break-word',
                 paddingLeft: 'calc(1.3in)', 
                 paddingRight: '2.5rem', 
-                marginTop: '0.5rem', 
+                
               }}
             >
+              <div className="absolute top-0 right-4">
+                <div className="relative inline-block text-left">
+                  <button
+                    onClick={() => setIsTransitionMenuOpen(!isTransitionMenuOpen)}
+                    className={`px-2 py-1 text-xs rounded mx-1 bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 relative`}
+                  >
+                    Transition <ChevronDown className="inline ml-1 h-4 w-4"/>
+                  </button>
+                  {isTransitionMenuOpen && (
+                    <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg">
+                      {transitions.map((transition) => (
+                        <button
+                          key={transition}
+                          onClick={() => handleTransitionSelect(transition)}
+                          className="block px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                        >
+                          {transition}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
               {scriptContent.map((item, index) => (
                 <div 
                   key={index} 
@@ -366,8 +402,8 @@ const FilmPrismV1: React.FC = () => {
                           : 'left',
                     ...(item.type === 'dialogue' && { marginLeft: '10.5rem', marginRight: '14.5rem' }),
                     ...(item.type === 'transition'  || item.type === 'fade in' ? { marginRight: '2rem' } : {}),
-                    marginTop: '2.5rem', 
-                    
+                    marginBottom: item.type === 'character' || item.type === 'parenthetical' ? '0' : '1rem', 
+
                     ...(item.type === 'logline' ? { marginLeft: '1.5rem', marginRight: '3rem' } : {}),
                   }}
                 >

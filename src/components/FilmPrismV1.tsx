@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ChevronDown } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ChevronDown, ArrowLeftRight, Swords, MessageCircle } from 'lucide-react';
 
 const ScriptPal: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,8 +18,8 @@ const ScriptPal: React.FC = () => {
           <div className="bg-white p-6 rounded-lg w-96">
             <h3 className="text-xl font-semibold mb-4">Enhance Script with AI</h3>
             <p className="mb-4">
-              Use Script Pal to give AI context when generating content for your script. 
-              This will allow you to generate locations, characters, dialogue, and more, 
+              Use Script Pal to give AI context when generating content for your script.
+              This will allow you to generate locations, characters, dialogue, and more,
               along with any storyboard elements.
             </p>
             <div className="flex justify-end">
@@ -53,7 +53,7 @@ const FilmPrismV1: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null);
   const [scenes, setScenes] = useState([{ id: 1, number: 1, heading: 'INT. LOCATION - DAY' }]);
   const nextSceneId = useRef(2);
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const [selectedElement, setSelectedElement] = useState<number | null>(null);
   const [isSceneNavOpen, setIsSceneNavOpen] = useState(true);
   const [editingElementId, setEditingElementId] = useState<number | null>(null);
   const [newContent, setNewContent] = useState('');
@@ -103,7 +103,7 @@ const FilmPrismV1: React.FC = () => {
       <div className="scene-container flex items-center mb-2">
         <span className="scene-number mr-2">{scene.number}</span>
         <span className="mr-2">{'\u00A0'.repeat(2)}</span>
-        <span 
+        <span
           className="scene-heading flex-grow cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 px-2 py-1 rounded"
           onClick={() => commitSceneHeading(scene.id)}
         >
@@ -125,25 +125,28 @@ const FilmPrismV1: React.FC = () => {
       </div>
     );
   };
+
   const addScene = (newScene: { id: number; number: number; heading: string }) => {
     setScenes([...scenes, newScene]);
     setScriptContent(prevContent => [...prevContent, { id: newScene.id, type: 'scene', content: `${newScene.number}  ${newScene.heading}`, editing: false }]);
   };
+
   const updateScene = (id: number, updates: Partial<{ number: number; heading: string }>) => {
     setScenes(scenes.map(scene => scene.id === id ? { ...scene, ...updates } : scene));
-    
-    setScriptContent(prevContent => 
-      prevContent.map(item => 
+    setScriptContent(prevContent =>
+      prevContent.map(item =>
         item.id === id
           ? { ...item, content: `${updates.number || item.content.split('  ')[0]}  ${updates.heading || item.content.split('  ')[1]}` }
           : item
       )
     );
   };
+
   const deleteScene = (id: number) => {
     setScenes(scenes.filter(scene => scene.id !== id));
     setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
+
   const handleSceneHeadingEdit = (id: number) => {
     const sceneIndex = scenes.findIndex((scene) => scene.id === id);
     if (sceneIndex !== -1) {
@@ -154,15 +157,17 @@ const FilmPrismV1: React.FC = () => {
       }
     }
   };
+
   const commitSceneHeading = (id: number) => {
     const scene = scenes.find(scene => scene.id === id);
     if (scene) {
       setScriptContent(prevContent => [...prevContent, { id: scene.id, type: 'scene', content: `${scene.number}  ${scene.heading}`, editing: false }]);
     }
   };
+
   const addScriptElement = (type: string) => {
     const newId = scriptContent.length + 1;
-    let newContent = type.trim().toUpperCase(); 
+    let newContent = type.trim().toUpperCase();
     let newType = type.toLowerCase();
 
     if (type === 'Logline') {
@@ -170,7 +175,7 @@ const FilmPrismV1: React.FC = () => {
         "A gripping tale of suspense and intrigue unfolds in the heart of a city that never sleeps.",
         "In a world where trust is a commodity, one person risks it all for the truth.",
         "As the past catches up with them, secrets unravel and lives are changed forever.",
-        "Amidst a brewing storm, one hero rises to defy the odds and fight for what’s right.",
+        "Amidst a brewing storm, one hero rises to defy the odds and fight for what's right.",
         "A daring adventure that spans time and space, testing the limits of courage and fate."
       ];
       const randomIndex = Math.floor(Math.random() * loglines.length);
@@ -184,10 +189,10 @@ const FilmPrismV1: React.FC = () => {
       newType = 'parenthetical';
     } else if (type === 'Dialogue') {
       const dialogues = [
-        "I’ve waited a lifetime for this moment.",
+        "I've waited a lifetime for this moment.",
         "You think you know me, but you have no idea.",
-        "If we don’t act now, there won’t be another chance.",
-        "I never asked to be a hero, but sometimes fate doesn’t give you a choice.",
+        "If we don't act now, there won't be another chance.",
+        "I never asked to be a hero, but sometimes fate doesn't give you a choice.",
         "This isn't just about me. It's about all of us."
       ];
       const randomIndex = Math.floor(Math.random() * dialogues.length);
@@ -205,7 +210,7 @@ const FilmPrismV1: React.FC = () => {
       newContent = sceneHeadings[randomIndex];
       newType = 'sceneheading';
     }
-    
+
     if (type === 'Scene Heading') {
       const newSceneNumber = scenes.length > 0 ? scenes[scenes.length - 1].number + 1 : 1;
       const newScene = { id: nextSceneId.current++, number: newSceneNumber, heading: 'INT. LOCATION - DAY', editing: false };
@@ -214,6 +219,7 @@ const FilmPrismV1: React.FC = () => {
       setScriptContent(prevContent => [...prevContent, { id: newId, type: newType, content: newContent, editing: false }]);
     }
   };
+
   const handleEditClick = (id: number) => {
     const element = scriptContent.find(item => item.id === id);
     setEditingElementId(id);
@@ -231,6 +237,7 @@ const FilmPrismV1: React.FC = () => {
       numberInputRef.current.focus();
     }
   };
+
   const handleInputChange = (id: number, value: string) => {
     setNewContent(value);
     const trimmedValue = value.trim();
@@ -240,6 +247,7 @@ const FilmPrismV1: React.FC = () => {
       setScenes(scenes.map(scene => scene.id === id ? { ...scene, heading: trimmedValue } : scene));
     }
   };
+
   const handleInputNumberChange = (id: number, value: string) => {
     setNewSceneNumber(value);
     setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: `${value}  ${newContent}` } : item));
@@ -248,12 +256,14 @@ const FilmPrismV1: React.FC = () => {
       setScenes(scenes.map(scene => scene.id === id ? { ...scene, number: parseInt(value, 10) } : scene));
     }
   };
+
   const handleSaveEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
     setNewSceneNumber('');
     setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
   };
+
   const handleCancelEdit = (id: number) => {
     setEditingElementId(null);
     setNewContent('');
@@ -262,12 +272,20 @@ const FilmPrismV1: React.FC = () => {
     setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: originalContent || '' } : item));
     setScenes(scenes.map(scene => scene.id === id ? {...scene, editing: false} : scene));
   };
+
   const handleDeleteClick = (id: number) => {
     setScriptContent(prevContent => prevContent.filter(item => item.id !== id));
   };
+
   const scriptElements = [
-    'Scene Heading', 'Logline', 'Character', 'Dialogue', 'Parenthetical', 'Transition'
+    { icon: <Film className="h-5 w-5" />, type: 'Scene Heading' },
+    { icon: <Swords className="h-5 w-5" />, type: 'Logline' },
+    { icon: <MessageCircle className="h-5 w-5" />, type: 'Character' },
+    { icon: <MessageCircle className="h-5 w-5" />, type: 'Dialogue' },
+    { icon: <MessageCircle className="h-5 w-5" />, type: 'Parenthetical' },
+    { icon: <ArrowLeftRight className="h-5 w-5" />, type: 'Transition' }
   ];
+
   const transitions = [
     'CUT TO:',
     'DISSOLVE TO:',
@@ -275,6 +293,7 @@ const FilmPrismV1: React.FC = () => {
     'FADE OUT:',
     'SMASH CUT TO:'
   ];
+
   const handleTransitionSelect = (transition: string) => {
     addScriptElement(transition);
     setIsTransitionMenuOpen(false);
@@ -282,7 +301,7 @@ const FilmPrismV1: React.FC = () => {
 
   return (
     <React.Fragment>
-      <div 
+      <div
         ref={componentRef}
         className={`h-screen flex flex-col ${theme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} transition-colors duration-300`}
       >
@@ -337,14 +356,15 @@ const FilmPrismV1: React.FC = () => {
                 <button
                   key={index}
                   onClick={() => {
-                    setSelectedElement(element);
-                    addScriptElement(element);
+                    setSelectedElement(index);
+                    addScriptElement(element.type);
                   }}
                   className={`px-2 py-1 text-xs rounded mx-1 ${
-                    selectedElement === element ? 'bg-indigo-700' : 'bg-indigo-600'
-                  } text-white hover:bg-indigo-700 transition duration-300`}
+                    selectedElement === index ? 'bg-indigo-700' : 'bg-indigo-600'
+                  } text-white hover:bg-indigo-700 transition duration-300 flex items-center`}
+                  title={element.type}
                 >
-                  {element}
+                  {element.icon}
                 </button>
               ))}
             </div>
@@ -359,9 +379,8 @@ const FilmPrismV1: React.FC = () => {
                 margin: '0 auto',
                 overflowWrap: 'break-word',
                 wordWrap: 'break-word',
-                paddingLeft: 'calc(1.3in)', 
-                paddingRight: '2.5rem', 
-                
+                paddingLeft: 'calc(1.3in)',
+                paddingRight: '2.5rem',
               }}
             >
               <div className="absolute top-0 right-4">
@@ -370,7 +389,7 @@ const FilmPrismV1: React.FC = () => {
                     onClick={() => setIsTransitionMenuOpen(!isTransitionMenuOpen)}
                     className={`px-2 py-1 text-xs rounded mx-1 bg-indigo-600 text-white hover:bg-indigo-700 transition duration-300 relative`}
                   >
-                    Transition <ChevronDown className="inline ml-1 h-4 w-4"/>
+                    <ArrowLeftRight className="inline ml-1 h-4 w-4" />
                   </button>
                   {isTransitionMenuOpen && (
                     <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg">
@@ -388,22 +407,21 @@ const FilmPrismV1: React.FC = () => {
                 </div>
               </div>
               {scriptContent.map((item, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`${item.type}`}
                   onMouseEnter={() => setHoveredElementId(item.id)}
                   onMouseLeave={() => setHoveredElementId(null)}
                   style={{
-                    textAlign: 
+                    textAlign:
                       item.type === 'character' || item.type === 'parenthetical' || item.type === 'dialogue'
                         ? 'center'
                         : item.type === 'transition' || item.type === 'fade in'
                           ? 'right'
                           : 'left',
                     ...(item.type === 'dialogue' && { marginLeft: '10.5rem', marginRight: '14.5rem' }),
-                    ...(item.type === 'transition'  || item.type === 'fade in' ? { marginRight: '2rem' } : {}),
-                    marginBottom: item.type === 'character' || item.type === 'parenthetical' ? '0' : '1rem', 
-
+                    ...(item.type === 'transition' || item.type === 'fade in' ? { marginRight: '2rem' } : {}),
+                    marginBottom: item.type === 'character' || item.type === 'parenthetical' ? '0' : '1rem',
                     ...(item.type === 'logline' ? { marginLeft: '1.5rem', marginRight: '3rem' } : {}),
                   }}
                 >
@@ -415,7 +433,7 @@ const FilmPrismV1: React.FC = () => {
                             type="text"
                             ref={numberInputRef}
                             value={newSceneNumber}
-                            onChange={(e) => handleInputChange(item.id, e.target.value)}
+                            onChange={(e) => handleInputNumberChange(item.id, e.target.value)}
                             className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mr-2 mt-2`}
                             style={{ opacity: 0.8, width: '3rem' }}
                           />
@@ -448,8 +466,8 @@ const FilmPrismV1: React.FC = () => {
                         : item.type === 'transition' || item.type === 'fade in'
                           ? 'justify-end'
                           : ''
-                     }`}>
-                      <span 
+                    }`}>
+                      <span
                         className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
                         style={{
                           ...(item.type === 'dialogue' && { textAlign: 'justify', width: '100%' }),

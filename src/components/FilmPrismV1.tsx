@@ -163,10 +163,17 @@ const FilmPrismV1: React.FC = () => {
     const newId = scriptContent.length + 1;
     let newContent = type.toUpperCase() + ':';
     let newType = type.toLowerCase();
-    
+
     if (type === 'Logline') {
-      newContent = newContent.trim();
-      newContent = "A gripping tale of suspense and intrigue unfolds.";
+      const loglines = [
+        "A gripping tale of suspense and intrigue unfolds in the heart of a city that never sleeps.",
+        "In a world where trust is a commodity, one person risks it all for the truth.",
+        "As the past catches up with them, secrets unravel and lives are changed forever.",
+        "Amidst a brewing storm, one hero rises to defy the odds and fight for what’s right.",
+        "A daring adventure that spans time and space, testing the limits of courage and fate."
+      ];
+      const randomIndex = Math.floor(Math.random() * loglines.length);
+      newContent = loglines[randomIndex];
     } else if (type === 'Character') {
       const randomIndex = Math.floor(Math.random() * characterNames.length);
       newContent = characterNames[randomIndex];
@@ -174,6 +181,28 @@ const FilmPrismV1: React.FC = () => {
     } else if (type === 'Parenthetical') {
       newContent = '(beat)';
       newType = 'parenthetical';
+    } else if (type === 'Dialogue') {
+      const dialogues = [
+        "I’ve waited a lifetime for this moment.",
+        "You think you know me, but you have no idea.",
+        "If we don’t act now, there won’t be another chance.",
+        "I never asked to be a hero, but sometimes fate doesn’t give you a choice.",
+        "This isn't just about me. It's about all of us."
+      ];
+      const randomIndex = Math.floor(Math.random() * dialogues.length);
+      newContent = dialogues[randomIndex];
+      newType = 'dialogue';
+    } else if (type === 'Scene Heading') {
+      const sceneHeadings = [
+        "EXT. ABANDONED WAREHOUSE - NIGHT",
+        "INT. CROWDED CAFÉ - DAY",
+        "EXT. SNOW-COVERED FOREST - DUSK",
+        "INT. UNDERGROUND BUNKER - MIDNIGHT",
+        "EXT. CITY ROOFTOP - SUNSET"
+      ];
+      const randomIndex = Math.floor(Math.random() * sceneHeadings.length);
+      newContent = sceneHeadings[randomIndex];
+      newType = 'sceneheading';
     }
     
     if (type === 'Scene Heading') {

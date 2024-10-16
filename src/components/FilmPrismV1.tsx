@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ChevronDown, ArrowLeftRight, Swords, MessageCircle } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ArrowLeftRight, Swords, MessageCircle, User, Pilcrow } from 'lucide-react';
 
-const ScriptPal: React.FC = () => {
+const ScriptPal = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <React.Fragment>
+    <>
       <button
         onClick={() => setIsOpen(true)}
         className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300"
@@ -34,7 +34,7 @@ const ScriptPal: React.FC = () => {
           </div>
         </div>
       )}
-    </React.Fragment>
+    </>
   );
 };
 
@@ -280,9 +280,9 @@ const FilmPrismV1: React.FC = () => {
   const scriptElements = [
     { icon: <Film className="h-5 w-5" />, type: 'Scene Heading' },
     { icon: <Swords className="h-5 w-5" />, type: 'Logline' },
-    { icon: <MessageCircle className="h-5 w-5" />, type: 'Character' },
+    { icon: <User className="h-5 w-5" />, type: 'Character' },
     { icon: <MessageCircle className="h-5 w-5" />, type: 'Dialogue' },
-    { icon: <MessageCircle className="h-5 w-5" />, type: 'Parenthetical' },
+    { icon: <Pilcrow className="h-5 w-5" />, type: 'Parenthetical' },
     { icon: <ArrowLeftRight className="h-5 w-5" />, type: 'Transition' }
   ];
 

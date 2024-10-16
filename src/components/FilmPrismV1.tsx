@@ -214,16 +214,15 @@ const FilmPrismV1: React.FC = () => {
 
   const handleInputChange = (id: number, value: string) => {
     setNewContent(value);
-    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: `${newSceneNumber}  ${value}` } : item));
-    const sceneIndex = scenes.findIndex(scene => scene.id === id);
-    if (sceneIndex !== -1) {
-      setScenes(scenes.map(scene => scene.id === id ? { ...scene, heading: value } : scene));
-    }
-  };
 
-  const handleInputNumberChange = (id: number, value: string) => {
-    setNewSceneNumber(value);
-    setScriptContent(prevContent => prevContent.map(item => item.id === id ? { ...item, content: `${value}  ${newContent}` } : item));
+    const trimmedValue = value.trim(); // Trim whitespace
+
+    setScriptContent(prevContent =>
+      prevContent.map(item =>
+        item.id === id ? { ...item, content: trimmedValue } : item // Use trimmed value directly
+      )
+    );
+
     const sceneIndex = scenes.findIndex(scene => scene.id === id);
     if (sceneIndex !== -1) {
       setScenes(scenes.map(scene => scene.id === id ? { ...scene, number: parseInt(value, 10) } : scene));

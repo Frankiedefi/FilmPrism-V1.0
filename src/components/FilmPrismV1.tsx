@@ -364,11 +364,11 @@ const FilmPrismV1: React.FC = () => {
                         : item.type === 'transition' || item.type === 'fade in'
                           ? 'right'
                           : 'left',
-                    ...(item.type === 'dialogue' && { textAlign: 'justify' }),
-                    ...(item.type === 'transition' || item.type === 'fade in' ? { marginRight: '1rem' } : {}),
-                    marginTop: '0.5rem', 
-                    ...(item.type === 'action' ? { marginLeft: '1.5rem' } : {}),
-                    ...(item.type === 'logline' ? { marginLeft: '1.5rem' } : {}),
+                    ...(item.type === 'dialogue' && { marginLeft: '10.5rem', marginRight: '14.5rem' }),
+                    ...(item.type === 'transition'  || item.type === 'fade in' ? { marginRight: '2rem' } : {}),
+                    marginTop: '2.5rem', 
+                    
+                    ...(item.type === 'logline' ? { marginLeft: '1.5rem', marginRight: '3rem' } : {}),
                   }}
                 >
                   {editingElementId === item.id ? (

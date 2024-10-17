@@ -331,7 +331,7 @@ const FilmPrismV1: React.FC = () => {
             <span>Run Time: {runTime}</span>
             <button onClick={handleExportPDF} className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
               <Save className="h-4 w-4 mr-1" />
-              Export PDF
+              Export 
             </button>
             <button className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
               <GitFork className="h-4 w-4 mr-1" />

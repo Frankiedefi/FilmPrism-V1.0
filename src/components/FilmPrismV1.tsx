@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ArrowLeftRight, Swords, MessageCircle, User, Pilcrow } from 'lucide-react';
+import { Sun, Moon, Save, FileDownIcon, GitFork, Maximize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ArrowLeftRight, Swords, MessageCircle, User, Pilcrow, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const ScriptPal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -310,6 +311,66 @@ const FilmPrismV1: React.FC = () => {
     doc.save('script.pdf');
   };
 
+  const handleSave = () => {
+    const doc = new jsPDF({
+      unit: 'pt',
+      putOnlyUsedFonts: true,
+    });
+    const LEFT_MARGIN = 72;
+    const TOP_MARGIN = 72;
+    let yOffset = TOP_MARGIN;
+    const LINE_HEIGHT = 15;
+
+    const data = scriptContent.map(item => {
+      let text = item.content.trim();
+      switch (item.type) {
+        case 'sceneheading':
+          text = text.toUpperCase();
+          break;
+        case 'character':
+          text = text.toUpperCase();
+          break;
+        case 'dialogue':
+          text = text.trim();
+          break;
+        case 'parenthetical':
+          text = `(${text})`;
+          break;
+        default:
+          break;
+      }
+      return [text];
+    });
+
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Film Script', LEFT_MARGIN, yOffset);
+    yOffset += 30;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+
+    autoTable(doc, {
+      body: data,
+      startY: yOffset,
+      margin: { left: LEFT_MARGIN, right: 72 },
+      columnStyles: {
+        0: {
+          cellPadding: 10,
+          fontSize: 12,
+          fontStyle: 'normal',
+        },
+      },
+      styles: {
+        cellPadding: 10,
+        fontSize: 12,
+        fontStyle: 'normal',
+      },
+    });
+
+    doc.save('script.pdf');
+  };
+
   return (
     <React.Fragment>
       <div
@@ -329,9 +390,9 @@ const FilmPrismV1: React.FC = () => {
           <div className="flex items-center space-x-2">
             <span>Pages: {pageCount}</span>
             <span>Run Time: {runTime}</span>
-            <button onClick={handleExportPDF} className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
-              <Save className="h-4 w-4 mr-1" />
-              Export 
+            <button onClick={handleSave} className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
+              <FileDown className="h-4 w-4 mr-1" />
+              Export
             </button>
             <button className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
               <GitFork className="h-4 w-4 mr-1" />

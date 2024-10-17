@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sun, Moon, Save, GitFork, Maximize, Minimize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ArrowLeftRight, Swords, MessageCircle, User, Pilcrow } from 'lucide-react';
+import { Sun, Moon, Save, GitFork, Maximize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ArrowLeftRight, Swords, MessageCircle, User, Pilcrow } from 'lucide-react';
+import jsPDF from 'jspdf';
 
 const ScriptPal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +15,7 @@ const ScriptPal = () => {
         Script Pal
       </button>
       {isOpen && (
-        <div className="fixed Finset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-96">
             <h3 className="text-xl font-semibold mb-4">Enhance Script with AI</h3>
             <p className="mb-4">
@@ -46,7 +47,6 @@ const FilmPrismV1: React.FC = () => {
     "Luca Romano", "Sophie Delacroix", "Leo Hunt", "Amara Fox", "Jasper Quinn"
   ];
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [scriptContent, setScriptContent] = useState<Array<{ id: number; type: string; content: string; editing: boolean }>>([]);
   const [pageCount, setPageCount] = useState(1);
   const [runTime, setRunTime] = useState('0:00');
@@ -83,16 +83,6 @@ const FilmPrismV1: React.FC = () => {
 
   const toggleTheme = () => {
     setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
-  };
-
-  const toggleFullScreen = () => {
-    if (!document.fullscreenElement) {
-      componentRef.current?.requestFullscreen();
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    }
   };
 
   const updatePageCountAndRunTime = (content: Array<{ id: number; type: string; content: string; editing: boolean }>) => {
@@ -303,6 +293,23 @@ const FilmPrismV1: React.FC = () => {
     setIsTransitionMenuOpen(false);
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    let yOffset = 10;
+
+    doc.setFontSize(20);
+    doc.text('Film Script', 10, yOffset);
+    yOffset += 10;
+
+    doc.setFontSize(12);
+    scriptContent.forEach(item => {
+      doc.text(item.content, 10, yOffset);
+      yOffset += 10;
+    });
+
+    doc.save('script.pdf');
+  };
+
   return (
     <React.Fragment>
       <div
@@ -314,17 +321,17 @@ const FilmPrismV1: React.FC = () => {
             <button onClick={toggleTheme} className={`p-2 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'}`}>
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
-            <button onClick={toggleFullScreen} className={`p-2 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'}`}>
-              {isFullScreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+            <button className={`p-2 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'}`}>
+              <Maximize className="h-5 w-5" />
             </button>
             <ScriptPal />
           </div>
           <div className="flex items-center space-x-2">
             <span>Pages: {pageCount}</span>
             <span>Run Time: {runTime}</span>
-            <button className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
+            <button onClick={handleExportPDF} className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
               <Save className="h-4 w-4 mr-1" />
-              Save
+              Export PDF
             </button>
             <button className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300">
               <GitFork className="h-4 w-4 mr-1" />
@@ -354,141 +361,141 @@ const FilmPrismV1: React.FC = () => {
               </div>
             )}
           </div>
-        <div className={`transition-all duration-300 ${isSceneNavOpen ? 'w-3/4' : 'flex-grow'} flex flex-col`}>
-          <div className="mb-4 flex justify-center">
-            {scriptElements.map((element, index) => (
-              <div key={index} className="relative inline-block">
-                <button
-                  onClick={() => {
-                    setSelectedElement(index);
-                    if (element.type !== 'Transition') {
-                      addScriptElement(element.type);
-                    } else {
-                      setIsTransitionMenuOpen(!isTransitionMenuOpen);
-                    }
+          <div className={`transition-all duration-300 ${isSceneNavOpen ? 'w-3/4' : 'flex-grow'} flex flex-col`}>
+            <div className="mb-4 flex justify-center">
+              {scriptElements.map((element, index) => (
+                <div key={index} className="relative inline-block">
+                  <button
+                    onClick={() => {
+                      setSelectedElement(index);
+                      if (element.type !== 'Transition') {
+                        addScriptElement(element.type);
+                      } else {
+                        setIsTransitionMenuOpen(!isTransitionMenuOpen);
+                      }
+                    }}
+                    className={`px-2 py-1 text-xs rounded mx-1 ${
+                      selectedElement === index ? 'bg-indigo-700' : 'bg-indigo-600'
+                    } text-white hover:bg-indigo-700 transition duration-300 flex items-center`}
+                    title={element.type}
+                  >
+                    {element.icon}
+                  </button>
+                  {element.type === 'Transition' && isTransitionMenuOpen && (
+                    <div ref={transitionMenuRef} className="absolute left-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10">
+                      {transitions.map((transition) => (
+                        <button
+                          key={transition}
+                          onClick={() => handleTransitionSelect(transition)}
+                          className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
+                        >
+                          {transition}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div
+              className={`script-content-container flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${
+                theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
+              } overflow-y-auto whitespace-pre-wrap relative`}
+              style={{
+                lineHeight: '1.5',
+                textAlign: 'left',
+                maxWidth: '8.5in',
+                margin: '0 auto',
+                overflowWrap: 'break-word',
+                wordWrap: 'break-word',
+                paddingLeft: 'calc(1.3in)',
+                paddingRight: '4.5rem',
+                paddingTop: '3.5rem',
+                paddingBottom: '1.5rem',
+              }}
+            >
+              {scriptContent.map((item, index) => (
+                <div
+                  key={index}
+                  className={`${item.type} mb-4`}
+                  onMouseEnter={() => setHoveredElementId(item.id)}
+                  onMouseLeave={() => setHoveredElementId(null)}
+                  style={{
+                    textAlign: transitions.includes(item.content) ? 'right' : 'left',
+                    ...(item.type === 'dialogue' && { marginLeft: '10.5rem', marginRight: '14.5rem' }),
+                    ...(transitions.includes(item.content) && { 
+                      width: '100%',
+                      paddingRight: '0',
+                      marginRight: '0.5rem', 
+                      textTransform: 'uppercase'
+                    }),
+                    marginBottom: item.type === 'character' || item.type === 'parenthetical' ? '0' : '1rem',
+                    ...(item.type === 'logline' && { marginLeft: '1.5rem', marginRight: '3rem' }),
                   }}
-                  className={`px-2 py-1 text-xs rounded mx-1 ${
-                    selectedElement === index ? 'bg-indigo-700' : 'bg-indigo-600'
-                  } text-white hover:bg-indigo-700 transition duration-300 flex items-center`}
-                  title={element.type}
                 >
-                  {element.icon}
-                </button>
-                {element.type === 'Transition' && isTransitionMenuOpen && (
-                  <div ref={transitionMenuRef} className="absolute left-0 mt-2 py-2 w-48 bg-white rounded-md shadow-lg z-10">
-                    {transitions.map((transition) => (
-                      <button
-                        key={transition}
-                        onClick={() => handleTransitionSelect(transition)}
-                        className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100"
-                      >
-                        {transition}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div
-            className={`script-content-container flex-grow w-full p-4 rounded font-mono text-sm mt-2 ${
-              theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-800 text-white'
-            } overflow-y-auto whitespace-pre-wrap relative`}
-            style={{
-              lineHeight: '1.5',
-              textAlign: 'left',
-              maxWidth: '8.5in',
-              margin: '0 auto',
-              overflowWrap: 'break-word',
-              wordWrap: 'break-word',
-              paddingLeft: 'calc(1.3in)',
-              paddingRight: '4.5rem',
-              paddingTop: '3.5rem',
-              paddingBottom: '1.5rem',
-            }}
-          >
-            {scriptContent.map((item, index) => (
-              <div
-                key={index}
-                className={`${item.type} mb-4`}
-                onMouseEnter={() => setHoveredElementId(item.id)}
-                onMouseLeave={() => setHoveredElementId(null)}
-                style={{
-                  textAlign: transitions.includes(item.content) ? 'right' : 'left',
-                  ...(item.type === 'dialogue' && { marginLeft: '10.5rem', marginRight: '14.5rem' }),
-                  ...(transitions.includes(item.content) && { 
-                    width: '100%',
-                    paddingRight: '0',
-                    marginRight: '0.5rem', // Compensate for container's right padding
-                    textTransform: 'uppercase'
-                  }),
-                  marginBottom: item.type === 'character' || item.type === 'parenthetical' ? '0' : '1rem',
-                  ...(item.type === 'logline' && { marginLeft: '1.5rem', marginRight: '3rem' }),
-                }}
-              >
-                {editingElementId === item.id ? (
-                  <div className="flex items-center justify-center">
-                    {item.type === 'scene' ? (
-                      <>
-                        <input
-                          type="text"
-                          ref={numberInputRef}
-                          value={newSceneNumber}
-                          onChange={(e) => handleInputNumberChange(item.id, e.target.value)}
-                          className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mr-2 mt-2`}
-                          style={{ opacity: 0.8, width: '3rem' }}
-                        />
+                  {editingElementId === item.id ? (
+                    <div className="flex items-center justify-center">
+                      {item.type === 'scene' ? (
+                        <>
+                          <input
+                            type="text"
+                            ref={numberInputRef}
+                            value={newSceneNumber}
+                            onChange={(e) => handleInputNumberChange(item.id, e.target.value)}
+                            className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mr-2 mt-2`}
+                            style={{ opacity: 0.8, width: '3rem' }}
+                          />
+                          <input
+                            type="text"
+                            ref={inputRef}
+                            value={newContent}
+                            onChange={(e) => handleInputChange(item.id, e.target.value)}
+                            className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
+                            style={{ opacity: 0.8, width: 'calc(100% - 4rem)' }}
+                          />
+                        </>
+                      ) : (
                         <input
                           type="text"
                           ref={inputRef}
                           value={newContent}
                           onChange={(e) => handleInputChange(item.id, e.target.value)}
                           className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
-                          style={{ opacity: 0.8, width: 'calc(100% - 4rem)' }}
+                          style={{ opacity: 0.8, width: '100%' }}
                         />
-                      </>
-                    ) : (
-                      <input
-                        type="text"
-                        ref={inputRef}
-                        value={newContent}
-                        onChange={(e) => handleInputChange(item.id, e.target.value)}
-                        className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
-                        style={{ opacity: 0.8, width: '100%' }}
-                      />
-                    )}
-                    <Check onClick={() => handleSaveEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
-                    <X onClick={() => handleCancelEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
-                  </div>
-                ) : (
-                  <div className={`flex items-center ${
-                    item.type === 'character' || item.type === 'parenthetical' || item.type === 'dialogue'
-                      ? 'justify-center'
-                      : item.type === 'transition' || item.type === 'fade in'
-                        ? 'justify-end'
-                        : ''
-                  }`}>
-                <span
-                  className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
-                  style={{
-                    ...(item.type === 'dialogue' && { textAlign: 'justify', width: '100%' }),
-                    ...(transitions.includes(item.content) && { display: 'inline-block', width: '100%' }),
-                  }}
-                >
-                  {item.content}
-                </span>
-                    {hoveredElementId === item.id && (
-                      <>
-                        <Edit2 onClick={() => handleEditClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />
-                        {item.type !== 'scene' && (
-                          <Trash2 onClick={() => handleDeleteClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      )}
+                      <Check onClick={() => handleSaveEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
+                      <X onClick={() => handleCancelEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+                    </div>
+                  ) : (
+                    <div className={`flex items-center ${
+                      item.type === 'character' || item.type === 'parenthetical' || item.type === 'dialogue'
+                        ? 'justify-center'
+                        : item.type === 'transition' || item.type === 'fade in'
+                          ? 'justify-end'
+                          : ''
+                    }`}>
+                  <span
+                    className={`text-${theme === 'light' ? 'gray-900' : 'gray-100'}`}
+                    style={{
+                      ...(item.type === 'dialogue' && { textAlign: 'justify', width: '100%' }),
+                      ...(transitions.includes(item.content) && { display: 'inline-block', width: '100%' }),
+                    }}
+                  >
+                    {item.content}
+                  </span>
+                      {hoveredElementId === item.id && (
+                        <>
+                          <Edit2 onClick={() => handleEditClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-blue-600 dark:text-blue-400" />
+                          {item.type !== 'scene' && (
+                            <Trash2 onClick={() => handleDeleteClick(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-red-600 dark:text-red-400" />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>

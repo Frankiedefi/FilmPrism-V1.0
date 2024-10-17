@@ -15,6 +15,14 @@ const ScriptsPage: React.FC = () => {
     plotPoints: [],
   });
   const [currentScript, setCurrentScript] = useState('');
+  const [useAnthropic, setUseAnthropic] = useState(false);
+  const [showAnthropicOption, setShowAnthropicOption] = useState(false);
+
+  useEffect(() => {
+    // Check if the Anthropic API key is available
+    const anthropicApiKey = process.env.REACT_APP_ANTHROPIC_API_KEY;
+    setShowAnthropicOption(!!anthropicApiKey);
+  }, []);
 
   const handleStoryCardComplete = (storyContext: any) => {
     const newContext = updateContext(scriptContext, {
@@ -30,7 +38,7 @@ const ScriptsPage: React.FC = () => {
 
   const handleGenerateIdea = async () => {
     try {
-      const idea = await generateWithContext('Generate a new scene idea', scriptContext);
+      const idea = await generateWithContext('Generate a new scene idea', scriptContext, useAnthropic);
       setCurrentScript(prevScript => prevScript + '\n\n' + idea);
     } catch (error) {
       console.error('Error generating idea:', error);
@@ -48,6 +56,10 @@ const ScriptsPage: React.FC = () => {
     savedProjects.push(project);
     localStorage.setItem('savedProjects', JSON.stringify(savedProjects));
     alert('Project saved successfully!');
+  };
+
+  const handleModelChange = () => {
+    setUseAnthropic(prev => !prev);
   };
 
   return (
@@ -69,6 +81,20 @@ const ScriptsPage: React.FC = () => {
         >
           Generate Idea
         </button>
+        {showAnthropicOption && (
+          <div className="flex items-center">
+            <span className="mr-2">Use Anthropic:</span>
+            <label className="switch">
+              <input type="checkbox" checked={useAnthropic} onChange={handleModelChange} />
+              <span className="slider round"></span>
+            </label>
+          </div>
+        )}
+        {!showAnthropicOption && (
+          <div className="text-gray-500">
+            Anthropic model is not available without the API key.
+          </div>
+        )}
         <button
           onClick={handleSaveProject}
           className="bg-green-500 text-white px-4 py-2 rounded"

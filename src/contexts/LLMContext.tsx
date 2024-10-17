@@ -1,16 +1,21 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, ReactNode } from 'react';
 
-type LLMOption = 'cohere';
+interface LLMContextValue {
+  selectedLLM: string;
+  setSelectedLLM: (llm: string) => void;
+}
 
-type LLMContextType = {
-  selectedLLM: LLMOption;
-  setSelectedLLM: (llm: LLMOption) => void;
-};
+export const LLMContext = createContext<LLMContextValue>({
+  selectedLLM: 'openai',
+  setSelectedLLM: () => {},
+});
 
-const LLMContext = createContext<LLMContextType | undefined>(undefined);
+interface LLMProviderProps {
+  children: ReactNode;
+}
 
-export const LLMProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [selectedLLM, setSelectedLLM] = useState<LLMOption>('cohere');
+export const LLMProvider: React.FC<LLMProviderProps> = ({ children }) => {
+  const [selectedLLM, setSelectedLLM] = useState<string>('openai');
 
   return (
     <LLMContext.Provider value={{ selectedLLM, setSelectedLLM }}>
@@ -19,10 +24,4 @@ export const LLMProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
-export const useLLM = () => {
-  const context = useContext(LLMContext);
-  if (context === undefined) {
-    throw new Error('useLLM must be used within a LLMProvider');
-  }
-  return context;
-};
+export const useLLM = () => React.useContext(LLMContext);

@@ -19,33 +19,54 @@
   font-family: 'Courier Prime', monospace;
   font-size: 12pt;
   line-height: 1;
+  position: relative;
+  padding-left: 25px; /* Increased padding to make room for the wider shading */
+}
+
+/* Binder shading effect */
+.screenplay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25px; /* Increased width of the shaded area */
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.4), transparent); /* Increased opacity for more intensity */
+  pointer-events: none; /* Ensures the pseudo-element doesn't interfere with text selection */
 }
 
 .screenplay .scene-heading {
   text-transform: uppercase;
   margin-top: 2em;
   color: #3b82f6; /* Blue */
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .action {
-  margin-top: 1em;
+  margin: 1.5rem 0; /* Removed top margin, added 1.5rem margin top and bottom */
+  text-indent: 0; /* Remove leading spaces */
+  margin-left: 1.5rem;
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .character {
   margin-top: 1em;
   margin-left: 2.5in;
   color: #10b981; /* Green */
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .dialogue {
   margin-left: 1in;
   margin-right: 1.5in;
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .parenthetical {
   margin-left: 1.8in;
   margin-right: 1.8in;
   color: #6b7280; /* Gray */
+  padding: 0; /* Removed padding */
 }
 
 .screenplay .transition {
@@ -53,6 +74,7 @@
   margin-top: 1em;
   text-align: right;
   color: #ef4444; /* Red */
+  padding: 0; /* Removed padding */
 }
 
 /* Syntax highlighting */
@@ -70,4 +92,22 @@
 
 .script-editor .transition {
   color: #ef4444; /* Red */
+}
+
+/* New class for script content container with shading effect */
+.script-content-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.script-content-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(0,0,0,0.4), transparent);
+  pointer-events: none;
+  z-index: 1;
 }

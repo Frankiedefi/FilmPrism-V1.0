@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sun, Moon, Save, FileDownIcon, GitFork, Maximize, Zap, RefreshCw, Edit2, Trash2, ChevronLeft, ChevronRight, Film, Check, X, ArrowLeftRight, Swords, MessageCircle, User, Pilcrow, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 const ScriptPal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -64,6 +63,8 @@ const FilmPrismV1: React.FC = () => {
   const numberInputRef = useRef<HTMLInputElement>(null);
   const [isTransitionMenuOpen, setIsTransitionMenuOpen] = useState(false);
   const transitionMenuRef = useRef<HTMLDivElement>(null);
+  const [title, setTitle] = useState('');
+  const [writer, setWriter] = useState('');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -298,10 +299,6 @@ const FilmPrismV1: React.FC = () => {
     const doc = new jsPDF();
     let yOffset = 10;
 
-    doc.setFontSize(20);
-    doc.text('Film Script', 10, yOffset);
-    yOffset += 10;
-
     doc.setFontSize(12);
     scriptContent.forEach(item => {
       doc.text(item.content, 10, yOffset);
@@ -316,56 +313,93 @@ const FilmPrismV1: React.FC = () => {
       unit: 'pt',
       putOnlyUsedFonts: true,
     });
-    const LEFT_MARGIN = 72;
-    const TOP_MARGIN = 72;
-    let yOffset = TOP_MARGIN;
-    const LINE_HEIGHT = 15;
+    const PAGE_WIDTH = doc.internal.pageSize.getWidth();
+    const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
+    const LEFT_MARGIN = 72 * 1.5;
+    const RIGHT_MARGIN = 72;
+    const CENTER_MARGIN = (PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN) / 2 + LEFT_MARGIN;
+    const DIALOGUE_INDENT = 72 * 2.9;
+    const CHARACTER_CUE_INDENT = 72 * 4.2;
+    const PARENTHETICAL_INDENT = 72 * 3.6;
+    let yOffset = 72;
+    const LINE_HEIGHT = 24;
+    let pageNumber = 1;
 
-    const data = scriptContent.map(item => {
+    // Title Page
+    doc.setFontSize(24);
+    doc.setFont('courier', 'bold');
+    const titleWidth = doc.getTextWidth(title);
+    doc.text(title, CENTER_MARGIN - titleWidth / 2, yOffset);
+    yOffset += 36;
+    doc.setFontSize(18);
+    doc.setFont('courier', 'normal');
+    const writerWidth = doc.getTextWidth(writer);
+    doc.text(writer, CENTER_MARGIN - writerWidth / 2, yOffset);
+    yOffset += 36;
+    doc.setFontSize(12);
+    doc.setFont('courier', 'normal');
+    doc.text(`Page ${pageNumber}`, PAGE_WIDTH - RIGHT_MARGIN, yOffset);
+    pageNumber++;
+    yOffset += 36;
+
+    doc.setFontSize(12);
+    doc.setFont('courier', 'normal');
+
+    scriptContent.forEach(item => {
       let text = item.content.trim();
+      let align = 'left';
+      let style = '';
+      let indent = 0;
+      let xPosition;
+
       switch (item.type) {
         case 'sceneheading':
           text = text.toUpperCase();
+          align = 'center';
+          style = 'bold';
+          xPosition = CENTER_MARGIN - doc.getTextWidth(text) / 2;
           break;
         case 'character':
           text = text.toUpperCase();
+          align = 'left'; // Changed alignment to left
+          indent = CHARACTER_CUE_INDENT;
+          xPosition = LEFT_MARGIN + indent - doc.getTextWidth(text) / 2;
           break;
         case 'dialogue':
-          text = text.trim();
+          align = 'left';
+          indent = DIALOGUE_INDENT;
+          xPosition = LEFT_MARGIN + indent;
           break;
         case 'parenthetical':
-          text = `(${text})`;
+          text = text.replace('((', '(').replace('))', ')'); 
+          align = 'left';
+          indent = PARENTHETICAL_INDENT;
+          xPosition = LEFT_MARGIN + indent;
+          break;
+        case 'transition':
+          align = 'right';
+          xPosition = PAGE_WIDTH - RIGHT_MARGIN - doc.getTextWidth(text);
           break;
         default:
+          xPosition = LEFT_MARGIN;
           break;
       }
-      return [text];
-    });
 
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Film Script', LEFT_MARGIN, yOffset);
-    yOffset += 30;
+      doc.setFontSize(12);
+      doc.setFont('courier', style);
+      doc.text(text, xPosition, yOffset, { align: align as 'left' | 'center' | 'right' });
+      yOffset += LINE_HEIGHT;
 
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-
-    autoTable(doc, {
-      body: data,
-      startY: yOffset,
-      margin: { left: LEFT_MARGIN, right: 72 },
-      columnStyles: {
-        0: {
-          cellPadding: 10,
-          fontSize: 12,
-          fontStyle: 'normal',
-        },
-      },
-      styles: {
-        cellPadding: 10,
-        fontSize: 12,
-        fontStyle: 'normal',
-      },
+      //Check for page break
+      if (yOffset >= PAGE_HEIGHT - 72) {
+        doc.addPage();
+        yOffset = 72;
+        doc.setFontSize(12);
+        doc.setFont('courier', 'normal');
+        doc.text(`Page ${pageNumber}`, PAGE_WIDTH - RIGHT_MARGIN, yOffset);
+        pageNumber++;
+        yOffset += 18;
+      }
     });
 
     doc.save('script.pdf');

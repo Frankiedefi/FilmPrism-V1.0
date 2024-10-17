@@ -308,102 +308,108 @@ const FilmPrismV1: React.FC = () => {
     doc.save('script.pdf');
   };
 
-  const handleSave = () => {
-    const doc = new jsPDF({
-      unit: 'pt',
-      putOnlyUsedFonts: true,
+const handleSave = () => {
+  const doc = new jsPDF({
+    unit: 'pt',
+    putOnlyUsedFonts: true,
+  });
+  const PAGE_WIDTH = doc.internal.pageSize.getWidth();
+  const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
+  const LEFT_MARGIN = 72 * 1.5;
+  const RIGHT_MARGIN = 72;
+  const CENTER_MARGIN = (PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN) / 2 + LEFT_MARGIN;
+  const DIALOGUE_INDENT = 26 * 2.9;
+  const CHARACTER_CUE_INDENT = 36 * 4.2;
+  const PARENTHETICAL_INDENT = 38 * 3.6;
+  const TRANSITION_INDENT = 72 * 6;
+  let yOffset = 72;
+  const LINE_HEIGHT = 14;
+  const EXTRA_SPACE = 10;
+
+  doc.setFontSize(12);
+  doc.setFont('courier', 'normal');
+
+  let prevType = '';
+  scriptContent.forEach((item, index) => {
+    let text = item.content.trim();
+    let align = 'left';
+    let style = '';
+    let indent = 0;
+    let xPosition;
+
+    // Add extra vertical space for elements except parentheticals and dialogue
+    if (index > 0 && 
+        item.type !== 'parenthetical' && 
+        item.type !== 'dialogue' && 
+        prevType !== 'parenthetical' && 
+        prevType !== 'dialogue') {
+      yOffset += EXTRA_SPACE;
+    }
+
+    switch (item.type) {
+      case 'sceneheading':
+        text = text.toUpperCase();
+        // Remove scene number
+        text = text.replace(/^\d+\s+/, '');
+        align = 'left';
+        style = 'bold';
+        xPosition = LEFT_MARGIN;
+        break;
+      case 'character':
+        text = text.toUpperCase();
+        align = 'left';
+        indent = CHARACTER_CUE_INDENT;
+        xPosition = LEFT_MARGIN + indent;
+        break;
+      case 'dialogue':
+        align = 'left';
+        indent = DIALOGUE_INDENT;
+        xPosition = LEFT_MARGIN + indent;
+        break;
+      case 'parenthetical':
+        text = text.replace('((', '(').replace('))', ')');
+        align = 'left';
+        indent = PARENTHETICAL_INDENT;
+        xPosition = LEFT_MARGIN + indent;
+        break;
+      case 'transition':
+        align = 'right';
+        xPosition = PAGE_WIDTH - RIGHT_MARGIN - doc.getTextWidth(text);
+        break;
+      default:
+        xPosition = LEFT_MARGIN;
+        break;
+    }
+
+    doc.setFontSize(12);
+    doc.setFont('courier', style);
+    
+    // Adjust maxWidth for dialogue to wrap sooner
+    const maxWidth = item.type === 'dialogue' ? PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - DIALOGUE_INDENT * 2 : PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN;
+    
+    const textLines = doc.splitTextToSize(text, maxWidth);
+    doc.text(textLines, xPosition, yOffset, { 
+      align: align as 'left' | 'center' | 'right'
     });
-    const PAGE_WIDTH = doc.internal.pageSize.getWidth();
-    const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-    const LEFT_MARGIN = 72 * 1.5;
-    const RIGHT_MARGIN = 72;
-    const CENTER_MARGIN = (PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN) / 2 + LEFT_MARGIN;
-    const DIALOGUE_INDENT = 72 * 2.9;
-    const CHARACTER_CUE_INDENT = 72 * 4.2;
-    const PARENTHETICAL_INDENT = 72 * 3.6;
-    let yOffset = 72;
-    const LINE_HEIGHT = 24;
-    let pageNumber = 1;
+    
+    yOffset += LINE_HEIGHT * textLines.length;
 
-    // Title Page
-    doc.setFontSize(24);
-    doc.setFont('courier', 'bold');
-    const titleWidth = doc.getTextWidth(title);
-    doc.text(title, CENTER_MARGIN - titleWidth / 2, yOffset);
-    yOffset += 36;
-    doc.setFontSize(18);
-    doc.setFont('courier', 'normal');
-    const writerWidth = doc.getTextWidth(writer);
-    doc.text(writer, CENTER_MARGIN - writerWidth / 2, yOffset);
-    yOffset += 36;
-    doc.setFontSize(12);
-    doc.setFont('courier', 'normal');
-    doc.text(`Page ${pageNumber}`, PAGE_WIDTH - RIGHT_MARGIN, yOffset);
-    pageNumber++;
-    yOffset += 36;
-
-    doc.setFontSize(12);
-    doc.setFont('courier', 'normal');
-
-    scriptContent.forEach(item => {
-      let text = item.content.trim();
-      let align = 'left';
-      let style = '';
-      let indent = 0;
-      let xPosition;
-
-      switch (item.type) {
-        case 'sceneheading':
-          text = text.toUpperCase();
-          align = 'center';
-          style = 'bold';
-          xPosition = CENTER_MARGIN - doc.getTextWidth(text) / 2;
-          break;
-        case 'character':
-          text = text.toUpperCase();
-          align = 'left'; // Changed alignment to left
-          indent = CHARACTER_CUE_INDENT;
-          xPosition = LEFT_MARGIN + indent - doc.getTextWidth(text) / 2;
-          break;
-        case 'dialogue':
-          align = 'left';
-          indent = DIALOGUE_INDENT;
-          xPosition = LEFT_MARGIN + indent;
-          break;
-        case 'parenthetical':
-          text = text.replace('((', '(').replace('))', ')'); 
-          align = 'left';
-          indent = PARENTHETICAL_INDENT;
-          xPosition = LEFT_MARGIN + indent;
-          break;
-        case 'transition':
-          align = 'right';
-          xPosition = PAGE_WIDTH - RIGHT_MARGIN - doc.getTextWidth(text);
-          break;
-        default:
-          xPosition = LEFT_MARGIN;
-          break;
-      }
-
-      doc.setFontSize(12);
-      doc.setFont('courier', style);
-      doc.text(text, xPosition, yOffset, { align: align as 'left' | 'center' | 'right' });
+    // Add extra line after dialogue
+    if (item.type === 'dialogue') {
       yOffset += LINE_HEIGHT;
+    }
 
-      //Check for page break
-      if (yOffset >= PAGE_HEIGHT - 72) {
-        doc.addPage();
-        yOffset = 72;
-        doc.setFontSize(12);
-        doc.setFont('courier', 'normal');
-        doc.text(`Page ${pageNumber}`, PAGE_WIDTH - RIGHT_MARGIN, yOffset);
-        pageNumber++;
-        yOffset += 18;
-      }
-    });
+    // Check for page break
+    if (yOffset >= PAGE_HEIGHT - 72) {
+      doc.addPage();
+      yOffset = 72;
+    }
 
-    doc.save('script.pdf');
-  };
+    prevType = item.type;
+  });
+
+  doc.save('script.pdf');
+};
 
   return (
     <React.Fragment>

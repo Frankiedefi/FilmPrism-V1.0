@@ -349,7 +349,7 @@ const handleSave = () => {
     switch (item.type) {
       case 'sceneheading':
         // Remove scene number from scene heading
-        text = text.replace(/^\d+\s+/, '');
+        text = text.replace(/^\d+\s+/, ''); 
         text = text.toUpperCase();
         align = 'left';
         style = 'bold';

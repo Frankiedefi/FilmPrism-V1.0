@@ -1,3 +1,5 @@
+@import './fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -98,6 +100,7 @@
 .script-content-container {
   position: relative;
   overflow: hidden;
+  font-family: 'Courier Screenplay', monospace; /* Apply Courier Screenplay font */
 }
 
 .script-content-container::before {

@@ -1,0 +1,5 @@
+1. Add logic for editing functions in script contetn section of the film prism.tsx- the user added the ability for a mintext width of 300px, but lets add dependencies on what element it is from the element array, diaulgue and loglines always have two rows for the edit bax.
+2. Fix various bugs in both PDF export formatting and Script content section formatting:
+    - Add page breaks
+    - Fix issue where the script content section is overflowing its container
+3. Work on scene and character navigator and add a notes section.

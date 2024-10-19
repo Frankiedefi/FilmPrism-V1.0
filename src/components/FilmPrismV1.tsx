@@ -65,6 +65,7 @@ const FilmPrismV1: React.FC = () => {
   const transitionMenuRef = useRef<HTMLDivElement>(null);
   const [title, setTitle] = useState('');
   const [writer, setWriter] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -308,35 +309,69 @@ const FilmPrismV1: React.FC = () => {
     doc.save('script.pdf');
   };
 
+  const formatSceneHeadingForPDF = (doc: jsPDF, text: string, yOffset: number) => {
+    const LEFT_MARGIN = 72 * 1.5;
+    text = text.replace(/^\d+\s+/, '').toUpperCase(); // Remove scene number and uppercase
+    doc.setFontSize(12);
+    doc.setFont('courier', 'bold');
+    doc.text(text, LEFT_MARGIN, yOffset);
+    return yOffset + 14; // Increment yOffset for the next line
+  };
+
+  const formatCharacterForPDF = (doc: jsPDF, text: string, yOffset: number) => {
+    const LEFT_MARGIN = 72 * 1.5;
+    const CHARACTER_CUE_INDENT = 36 * 4.2;
+    text = text.toUpperCase();
+    doc.setFontSize(12);
+    doc.setFont('courier', 'normal');
+    doc.text(text, LEFT_MARGIN + CHARACTER_CUE_INDENT, yOffset);
+    return yOffset + 14; // Increment yOffset for the next line
+  };
+
+  const formatDialogueForPDF = (doc: jsPDF, text: string, yOffset: number) => {
+    const LEFT_MARGIN = 72 * 1.5;
+    const DIALOGUE_INDENT = 26 * 2.9;
+    const PAGE_WIDTH = doc.internal.pageSize.getWidth();
+    const RIGHT_MARGIN = 72;
+    const maxWidth = PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - DIALOGUE_INDENT * 2;
+    doc.setFontSize(12);
+    doc.setFont('courier', 'normal');
+    const textLines = doc.splitTextToSize(text, maxWidth);
+    doc.text(textLines, LEFT_MARGIN + DIALOGUE_INDENT, yOffset);
+    return yOffset + 14 * textLines.length + 14; // Increment yOffset for the next line, including extra line after dialogue
+  };
+
+  const formatParentheticalForPDF = (doc: jsPDF, text: string, yOffset: number) => {
+    const LEFT_MARGIN = 72 * 1.5;
+    const PARENTHETICAL_INDENT = 38 * 3.6;
+    text = text.replace('((', '(').replace('))', ')');
+    doc.setFontSize(12);
+    doc.setFont('courier', 'normal');
+    doc.text(text, LEFT_MARGIN + PARENTHETICAL_INDENT, yOffset);
+    return yOffset + 14; // Increment yOffset for the next line
+  };
+
+  const formatTransitionForPDF = (doc: jsPDF, text: string, yOffset: number) => {
+    const RIGHT_MARGIN = 72;
+    const PAGE_WIDTH = doc.internal.pageSize.getWidth();
+    doc.setFontSize(12);
+    doc.setFont('courier', 'normal');
+    const xPosition = PAGE_WIDTH - RIGHT_MARGIN - doc.getTextWidth(text);
+    doc.text(text, xPosition, yOffset);
+    return yOffset + 14; // Increment yOffset for the next line
+  };
+
 const handleSave = () => {
   const doc = new jsPDF({
     unit: 'pt',
     putOnlyUsedFonts: true,
   });
-  const PAGE_WIDTH = doc.internal.pageSize.getWidth();
   const PAGE_HEIGHT = doc.internal.pageSize.getHeight();
-  const LEFT_MARGIN = 72 * 1.5;
-  const RIGHT_MARGIN = 72;
-  const CENTER_MARGIN = (PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN) / 2 + LEFT_MARGIN;
-  const DIALOGUE_INDENT = 26 * 2.9;
-  const CHARACTER_CUE_INDENT = 36 * 4.2;
-  const PARENTHETICAL_INDENT = 38 * 3.6;
-  const TRANSITION_INDENT = 72 * 6;
   let yOffset = 72;
-  const LINE_HEIGHT = 14;
   const EXTRA_SPACE = 10;
-
-  doc.setFontSize(12);
-  doc.setFont('courier', 'normal');
 
   let prevType = '';
   scriptContent.forEach((item, index) => {
-    let text = item.content.trim();
-    let align = 'left';
-    let style = '';
-    let indent = 0;
-    let xPosition;
-
     // Add extra vertical space for elements except parentheticals and dialogue
     if (index > 0 && 
         item.type !== 'parenthetical' && 
@@ -348,55 +383,23 @@ const handleSave = () => {
 
     switch (item.type) {
       case 'sceneheading':
-        // Remove scene number from scene heading
-        text = text.replace(/^\d+\s+/, ''); 
-        text = text.toUpperCase();
-        align = 'left';
-        style = 'bold';
-        xPosition = LEFT_MARGIN;
+        yOffset = formatSceneHeadingForPDF(doc, item.content, yOffset);
         break;
       case 'character':
-        text = text.toUpperCase();
-        align = 'left';
-        indent = CHARACTER_CUE_INDENT;
-        xPosition = LEFT_MARGIN + indent;
+        yOffset = formatCharacterForPDF(doc, item.content, yOffset);
         break;
       case 'dialogue':
-        align = 'left';
-        indent = DIALOGUE_INDENT;
-        xPosition = LEFT_MARGIN + indent;
+        yOffset = formatDialogueForPDF(doc, item.content, yOffset);
         break;
       case 'parenthetical':
-        text = text.replace('((', '(').replace('))', ')');
-        align = 'left';
-        indent = PARENTHETICAL_INDENT;
-        xPosition = LEFT_MARGIN + indent;
+        yOffset = formatParentheticalForPDF(doc, item.content, yOffset);
         break;
       case 'transition':
-        align = 'right';
-        xPosition = PAGE_WIDTH - RIGHT_MARGIN - doc.getTextWidth(text);
+        yOffset = formatTransitionForPDF(doc, item.content, yOffset);
         break;
       default:
-        xPosition = LEFT_MARGIN;
+        yOffset += 14; // Default line height
         break;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont('courier', style);
-    
-    // Adjust maxWidth for dialogue to wrap sooner
-    const maxWidth = item.type === 'dialogue' ? PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN - DIALOGUE_INDENT * 2 : PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN;
-    
-    const textLines = doc.splitTextToSize(text, maxWidth);
-    doc.text(textLines, xPosition, yOffset, { 
-      align: align as 'left' | 'center' | 'right'
-    });
-    
-    yOffset += LINE_HEIGHT * textLines.length;
-
-    // Add extra line after dialogue
-    if (item.type === 'dialogue') {
-      yOffset += LINE_HEIGHT;
     }
 
     // Check for page break
@@ -411,18 +414,22 @@ const handleSave = () => {
   doc.save('script.pdf');
 };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
   return (
     <React.Fragment>
       <div
         ref={componentRef}
-        className={`h-screen flex flex-col ${theme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} transition-colors duration-300`}
+        className={`h-screen flex flex-col ${theme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'} transition-colors duration-300 ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
       >
         <div className="flex justify-between items-center p-4 border-b border-gray-700">
           <div className="flex items-center space-x-2">
             <button onClick={toggleTheme} className={`p-2 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'}`}>
               {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </button>
-            <button className={`p-2 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'}`}>
+            <button onClick={toggleFullscreen} className={`p-2 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-gray-700'}`}>
               <Maximize className="h-5 w-5" />
             </button>
             <ScriptPal />
@@ -552,7 +559,7 @@ const handleSave = () => {
                             value={newContent}
                             onChange={(e) => handleInputChange(item.id, e.target.value)}
                             className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
-                            style={{ opacity: 0.8, width: 'calc(100% - 4rem)' }}
+                            style={{ opacity: 0.8, width: 'auto', minWidth: '300px' }}
                           />
                         </>
                       ) : (
@@ -562,7 +569,7 @@ const handleSave = () => {
                           value={newContent}
                           onChange={(e) => handleInputChange(item.id, e.target.value)}
                           className={`bg-${theme === 'light' ? 'gray-100' : 'gray-700'} border border-gray-300 rounded px-2 py-1 text-${theme === 'light' ? 'gray-900' : 'gray-100'} mt-2`}
-                          style={{ opacity: 0.8, width: '100%' }}
+                          style={{ opacity: 0.8, width: 'auto', minWidth: '300px' }}
                         />
                       )}
                       <Check onClick={() => handleSaveEdit(item.id)} className="h-4 w-4 ml-2 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 p-1 rounded text-green-600 dark:text-green-400" />
